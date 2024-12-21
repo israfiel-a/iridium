@@ -25,7 +25,7 @@ namespace Iridium
      * @brief An enumerator specifying what cycle of release a version
      * object details.
      */
-    enum Release_Cycle_Identifier
+    enum ReleaseCycleIdentifier
     {
         /**
          * @brief The object details an object in pre-alpha. This means
@@ -76,7 +76,7 @@ namespace Iridium
             /**
              * @brief The release cycle identifier of the version.
              */
-            Release_Cycle_Identifier rcid = pre_alpha;
+            ReleaseCycleIdentifier rcid = pre_alpha;
 
         public:
             /**
@@ -87,7 +87,7 @@ namespace Iridium
              * @param rcid The release cycle identifier of the version.
              */
             Version(uint8_t major, uint8_t minor, uint8_t tweak,
-                    Release_Cycle_Identifier rcid)
+                    ReleaseCycleIdentifier rcid)
             {
                 this->major = major;
                 this->minor = minor;
@@ -117,7 +117,7 @@ namespace Iridium
              * @brief Get the release cycle identifier.
              * @return The release cycle identifier.
              */
-            Release_Cycle_Identifier GetRCID() const { return this->rcid; }
+            ReleaseCycleIdentifier GetRCID() const { return this->rcid; }
 
             /**
              * @brief Stringify the version.

@@ -1,8 +1,8 @@
+#include <Files.hpp>
 #include <Ignition.hpp>
-#include <iostream>
 
 int main()
 {
-    std::cout << Iridium::Engine::Get().GetVersion().Stringify()
-              << std::endl;
+    Iridium::File opened_file("cat.jpeg");
+    opened_file.Hexdump();
 }

@@ -1,12 +1,14 @@
 #include <Ignition.hpp>
-using namespace Iridium;
 
-bool Engine::Start(const std::string &config_path)
+namespace Iridium
 {
-    this->running = true;
-    return true;
+    bool Engine::Start(const std::string &config_path)
+    {
+        this->running = true;
+        return true;
+    }
+
+    const Version &Engine::GetVersion() const { return this->version; }
+
+    bool Engine::IsRunning() const { return this->running; }
 }
-
-const Version &Engine::GetVersion() const { return this->version; }
-
-bool Engine::IsRunning() const { return this->running; }

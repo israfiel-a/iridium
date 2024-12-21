@@ -9,7 +9,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_CXX_FLAGS "-Ofast -Wall -Wpedantic -Werror")
+set(CMAKE_CXX_FLAGS "-Wall -Wpedantic -Werror")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -fsanitize=undefined -fsanitize=leak -fsanitize=address")
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast")
 
 # Set all proper directories and note down locations.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Iridium/Demos)
@@ -22,8 +24,10 @@ set(IRIDIUM_DEMO_DIR "${CMAKE_SOURCE_DIR}/Demos")
 include_directories(${IRIDIUM_INCLUDE_DIR})
 
 # Note down all the files this project contains.
-set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Ignition.hpp" "${IRIDIUM_INCLUDE_DIR}/Version.hpp")
-set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Ignition.cpp" "${IRIDIUM_SOURCE_DIR}/Version.cpp")
+set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Ignition.hpp" "${IRIDIUM_INCLUDE_DIR}/Version.hpp"
+    "${IRIDIUM_INCLUDE_DIR}/Files.hpp")
+set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Ignition.cpp" "${IRIDIUM_SOURCE_DIR}/Version.cpp"
+    "${IRIDIUM_SOURCE_DIR}/Files.cpp")
 
 # Create the Iridium library.
 add_library(Iridium SHARED ${IRIDIUM_SOURCE_FILES})
