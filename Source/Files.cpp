@@ -1,190 +1,175 @@
 #include <Files.hpp>
-#include <cstring>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <iterator>
+
+/**
+ * @brief A fixed-width type that, when passed to an std::ostream, will
+ * allow padding input.
+ * @tparam T The type of input.
+ * @tparam W The width of padding.
+ */
+template <typename T, int W>
+struct FixedWidthValue
+{
+        FixedWidthValue(T v_) : v(v_) {}
+        T v;
+};
+
+/**
+ * @brief The default fixed-width stream operator. This does not set a
+ * delimiter to fill with.
+ * @tparam T The type of input.
+ * @tparam W The width of padding.
+ * @param output The output stream.
+ * @param value The value we're printing.
+ * @return The newly streamed-to output stream.
+ */
+template <typename T, int W>
+std::ostream &operator<<(std::ostream &output,
+                         const FixedWidthValue<T, W> &value)
+{
+    return output << std::setw(W) << value.v;
+}
+
+/**
+ * @brief The fixed-width stream operator for unsigned characters. This
+ * automatically prints a delimiter character if the byte can't be printed.
+ * @tparam W The width of padding.
+ * @param output The output stream.
+ * @param value The value we're printing.
+ * @return The newly streamed-to output stream.
+ */
+template <int W>
+std::ostream &operator<<(std::ostream &output,
+                         const FixedWidthValue<std::uint8_t, W> &value)
+{
+    // If the character is able to be printed, print it. Otherwise, print
+    // the delimiter.
+    if (isprint((int)value.v) && value.v != ' ')
+        return output << value.v << " ";
+    else return output << std::setw(W) << output.fill();
+}
 
 namespace Iridium
 {
-    template <typename T, std::uint32_t W>
-    struct FixedWidthValue
+    std::string MIME::GetFiletype(const FileContents &file_contents)
     {
-            FixedWidthValue(T v_) : v(v_) {}
-            T v;
-    };
+        if (file_contents.size() > 7 && file_contents[0] == 0x89 &&
+            file_contents[1] == 0x50 && file_contents[2] == 0x4E &&
+            file_contents[3] == 0x47 && file_contents[4] == 0x0D &&
+            file_contents[5] == 0x0A && file_contents[6] == 0x1A &&
+            file_contents[7] == 0x0A)
+            return "image/png";
 
-    template <typename T, std::uint32_t W>
-    std::ostream &operator<<(std::ostream &ostr,
-                             const FixedWidthValue<T, W> &fwv)
-    {
-        return ostr << std::setw(W) << fwv.v;
+        if (file_contents.size() > 3 && file_contents[0] == 0xFF &&
+            file_contents[1] == 0xD8 && file_contents[2] == 0xFF &&
+            (file_contents[3] == 0xDB || file_contents[3] == 0xE0))
+            return "image/jpeg";
+
+        if (file_contents.size() > 8 && file_contents[0] == 0x5D &&
+            file_contents[1] == 0x49 && file_contents[2] == 0x72 &&
+            file_contents[3] == 0x69 && file_contents[4] == 0x64 &&
+            file_contents[5] == 0x69 && file_contents[6] == 0x75 &&
+            file_contents[7] == 0x6D && file_contents[8] == 0x5D)
+            return "text/config";
+
+        return "application/octet-stream";
     }
 
-    template <std::uint32_t W>
-    std::ostream &operator<<(std::ostream &ostr,
-                             const FixedWidthValue<std::uint8_t, W> &fwv)
+    File::File(const FilePath &path)
     {
-        if (isprint((int)fwv.v) && fwv.v != ' ')
-            return ostr << fwv.v << " ";
-        else return ostr << std::setfill('.') << std::setw(W) << ".";
-    }
-
-    File::File(const std::string &path)
-    {
-        this->directory = GetAssetSubdirectoryFromPath(path);
-        this->basename = GetBasenameFromPath(path);
-
-        //! THIS FUNCTION ONLY WORKS IF CWD IS THE EXECUTABLE
-        //! LOCATION!!!!!
-        std::ifstream file_stream(GetApplicationAssetDirectory() + path,
-                                  std::ios::binary | std::ios::ate);
-
-        if (!file_stream.is_open())
+        this->path = NormalizePath(path);
+        if (!std::filesystem::is_regular_file(this->path))
         {
-            //! Report error here.
-            std::cout << GetApplicationAssetDirectory() + path << "\n"
-                      << strerror(errno);
+            // No proper error recorder exists yet, so just fail the thread
+            // as a placeholder.
             exit(255);
         }
 
-        //! rename this to size
-        std::ifstream::pos_type pos = file_stream.tellg();
-        if (pos == 0) { this->contents = std::vector<std::uint8_t>{}; }
-        else
+        // Open the file in raw binary mode and with the position pointer
+        // at the end of the buffer.
+        std::ifstream file_stream(this->path,
+                                  std::ios::binary | std::ios::ate);
+        if (!file_stream.is_open())
         {
-            this->contents = std::vector<std::uint8_t>(pos);
-            file_stream.seekg(0, std::ios::beg);
-            file_stream.read((char *)this->contents.data(), pos);
+            // Follows the above comment.
+            exit(255);
         }
 
-        file_stream.close();
-    }
+        std::ifstream::pos_type file_size = file_stream.tellg();
+        this->contents = std::vector<std::uint8_t>(file_size);
 
-    const std::string &File::GetDirectory() const
-    {
-        return this->directory;
-    }
-
-    const std::string &File::GetBasename() const { return this->basename; }
-
-    std::string File::GetType() const
-    {
-        static std::string mime = InferFiletype(this->contents);
-        return mime;
-    }
-
-    std::ifstream::pos_type File::GetSize() const
-    {
-        // Not worth it to cache.
-        return this->contents.size();
-    }
-
-    const std::vector<std::uint8_t> &File::GetContents() const
-    {
-        return this->contents;
-    }
-
-    std::string File::GetContentsAsString() const
-    {
-        static std::string stringified_contents(this->contents.begin(),
-                                                this->contents.end());
-        return stringified_contents;
-    }
-
-    void File::Hexdump(const std::ostream &output,
-                       std::uint32_t column_count, bool metadata,
-                       bool linenum, bool characters) const
-    {
-        if (metadata)
-            std::cout << "\nFile '" << this->GetBasename() << "' ("
-                      << this->GetSize() << " bytes):\n\tFull path: "
-                      << GetApplicationAssetDirectory()
-                      << this->GetDirectory() << this->GetBasename()
-                      << "\n\tMIME type: " << this->GetType() << "\n\n";
-
-        std::cout << std::uppercase << std::hex;
-        for (std::uint32_t row_count = 0;
-             row_count < this->contents.size() / column_count; row_count++)
+        // Read any content.
+        if (file_size > 0)
         {
-            std::cout << std::setfill('0');
-            if (linenum)
-                std::cout << std::setw(8) << row_count * column_count
-                          << "  ";
+            file_stream.seekg(0, std::ios::beg);
+            file_stream.read((char *)this->contents.data(), file_size);
+        }
+    }
 
-            std::uint32_t index = row_count * column_count;
+    const std::string &File::StringifyMetadata() const noexcept
+    {
+        static std::string metadata_string =
+            "File \"" + this->GetBasename().string() + "\" (" +
+            std::to_string(this->GetSize()) +
+            " bytes):\n\tFull Path: " + this->GetPath().string() +
+            "\n\tMIME Type: " + this->GetType() + "\n";
+        return metadata_string;
+    }
+
+    void File::Hexdump(std::ostream &output, std::uint32_t column_count,
+                       bool characters) const
+    {
+        // Save the flags of the output stream so we can restore them
+        // afterward.
+        std::ios_base::fmtflags saved_flags(output.flags());
+        output << std::uppercase << std::hex;
+
+        const std::size_t max_rows = this->contents.size() / column_count;
+        for (std::size_t current_row = 0; current_row < max_rows;
+             current_row++)
+        {
+            const std::size_t row_begin = current_row * column_count;
+            const std::size_t row_end = row_begin + column_count;
             const std::vector<std::uint8_t> row(
-                this->contents.begin() + index,
-                this->contents.begin() + index + column_count);
+                this->contents.begin() + row_begin,
+                this->contents.begin() + row_end);
 
+            output << std::setfill('0');
+            // Print the line number.
+            output << std::setw(8) << row_begin << "  ";
+            // Copy the integer data into the given output stream.
             std::copy(row.begin(), row.end(),
                       std::ostream_iterator<FixedWidthValue<int, 2>>(
-                          std::cout, " "));
+                          output, " "));
 
             if (characters)
             {
-                std::cout << "  ";
+                output << "  " << std::setfill('.');
                 std::copy(
                     row.begin(), row.end(),
                     std::ostream_iterator<
-                        FixedWidthValue<std::uint8_t, 2>>(std::cout, " "));
+                        FixedWidthValue<std::uint8_t, 2>>(output, " "));
             }
 
-            std::cout << "\n";
+            output << "\n";
         }
-        std::cout << std::dec;
+
+        // Reset flags and flush the stream.
+        output.flags(saved_flags);
+        output.flush();
     }
 
-    std::string GetApplicationAssetDirectory()
+    FilePath NormalizePath(const FilePath &path)
     {
-        // This will have further config in the future, so we have created
-        // a boilerplate function to lay down the seeds.
-        return "./Assets/";
+        std::filesystem::path canonical_path =
+            std::filesystem::weakly_canonical(
+                GetAssetDirectory().append(path.string()));
+        return canonical_path.make_preferred();
     }
 
-    std::string GetAssetSubdirectoryFromPath(const std::string &path)
+    FilePath GetAssetDirectory()
     {
-        const std::size_t last_directory_splitter = path.find_last_of('/');
-        return path.substr(0, (last_directory_splitter != std::string::npos
-                                   ? last_directory_splitter
-                                   : 0));
-    }
-
-    std::string GetBasenameFromPath(const std::string &path)
-    {
-        // This will fail on Windows!
-        const std::size_t last_directory_splitter = path.find_last_of('/');
-        const std::size_t extension_dot = path.find_last_of('.');
-
-        return path.substr(
-            (last_directory_splitter != std::string::npos
-                 ? last_directory_splitter
-                 : 0),
-            (extension_dot != std::string::npos ? extension_dot : 0));
-    }
-
-    std::string
-    InferFiletype(const std::vector<std::uint8_t> &file_contents)
-    {
-        if (file_contents.at(0) == 0x89 && file_contents.at(1) == 0x50 &&
-            file_contents.at(2) == 0x4E && file_contents.at(3) == 0x47 &&
-            file_contents.at(4) == 0x0D && file_contents.at(5) == 0x0A &&
-            file_contents.at(6) == 0x1A && file_contents.at(7) == 0x0A)
-            return "image/png";
-
-        if (file_contents.at(0) == 0xFF && file_contents.at(1) == 0xD8 &&
-            file_contents.at(2) == 0xFF &&
-            (file_contents.at(3) == 0xDB || file_contents.at(3) == 0xE0))
-            return "image/jpeg";
-
-        // "[Iridium]"
-        if (file_contents.at(0) == 0x5B && file_contents.at(1) == 0x49 &&
-            file_contents.at(2) == 0x52 && file_contents.at(3) == 0x43 &&
-            file_contents.at(4) == 0x4E && file_contents.at(5) == 0x46 &&
-            file_contents.at(6) == 0x5B)
-            // Non-standard MIME, but the engine uses it.
-            return "text/iridium-config";
-
-        return "application/octet-stream";
+        return std::filesystem::path("./Assets/");
     }
 }

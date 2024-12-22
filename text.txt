@@ -4,13 +4,9 @@
 [ 16%] Building CXX object CMakeFiles/Iridium.dir/Source/Files.cpp.o
 [ 33%] Linking CXX shared library Iridium/Library/libIridium.so
 [ 66%] Built target Iridium
-[ 83%] Linking CXX executable Iridium/Demos/SimpleWindow
+[ 83%] Building CXX object CMakeFiles/SimpleWindow.dir/Demos/SimpleWindow.cpp.o
+[100%] Linking CXX executable Iridium/Demos/SimpleWindow
 [100%] Built target SimpleWindow
-
-File 'cat' (412821 bytes):
-	Full path: ./Assets/cat
-	MIME type: image/jpeg
-
 00000000  FF D8 FF E0 00 10 4A 46 49 46 00 01 02 01 00 48 00 48 00 00 FF E2 0C 58 49 43 43 5F 50 52 4F 46   .. .. .. .. .. .. J  F  I  F  .. .. .. .. .. H  .. H  .. .. .. .. .. X  I  C  C  _  P  R  O  F  
 00000020  49 4C 45 00 01 01 00 00 0C 48 4C 69 6E 6F 02 10 00 00 6D 6E 74 72 52 47 42 20 58 59 5A 20 07 CE   I  L  E  .. .. .. .. .. .. H  L  i  n  o  .. .. .. .. m  n  t  r  R  G  B  .. X  Y  Z  .. .. .. 
 00000040  00 02 00 09 00 06 00 31 00 00 61 63 73 70 4D 53 46 54 00 00 00 00 49 45 43 20 73 52 47 42 00 00   .. .. .. .. .. .. .. 1  .. .. a  c  s  p  M  S  F  T  .. .. .. .. I  E  C  .. s  R  G  B  .. .. 
