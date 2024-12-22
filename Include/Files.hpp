@@ -12,11 +12,8 @@
 #ifndef IRIDIUM_FILES_HPP
 #define IRIDIUM_FILES_HPP
 
-// C++ standard I/O operations.
-#include <iostream>
-// C++ filesystem library.
 #include <filesystem>
-// C++ standard variable-sized array.
+#include <iostream>
 #include <vector>
 
 /**
@@ -28,11 +25,11 @@ namespace Iridium
      * @brief The path to a file. This is an STL filesystem::path
      * structure.
      */
-    typedef std::filesystem::path FilePath;
+    using FilePath = std::filesystem::path;
     /**
      * @brief A file's contents. This is an STL vector of unsigned bytes.
      */
-    typedef std::vector<std::uint8_t> FileContents;
+    using FileContents = std::vector<std::uint8_t>;
 
     /**
      * @brief Utilities having to do with MIME type.
@@ -42,31 +39,32 @@ namespace Iridium
         /**
          * @brief A file's MIME type. This is an STL string object.
          */
-        typedef std::string FileMIME;
+        using FileMIME = std::string;
 
         /**
          * @brief The MIME for a JPEG file. The signature for this is `FF
          * D8 FF (D8 | E0)`.
          */
-        constexpr const char *jpeg_mime = "image/jpeg";
+        constexpr std::string_view jpeg_mime = "image/jpeg";
 
         /**
          * @brief The MIME for a PNG file. The signature for this is `89 50
          * 4E 47 0D 0A 1A 0A`.
          */
-        constexpr const char *png_mime = "image/png";
+        constexpr std::string_view png_mime = "image/png";
 
         /**
          * @brief The MIME for an Iridium config file. Since each one
          * begins with an [Iridium], the signature is just that. This is
          * not standard.
          */
-        constexpr const char *config_mime = "text/config";
+        constexpr std::string_view config_mime = "text/config";
 
         /**
          * @brief The MIME for a generic/unknown file.
          */
-        constexpr const char *generic_mime = "application/octet-stream";
+        constexpr std::string_view generic_mime =
+            "application/octet-stream";
 
         FileMIME GetFiletype(const FileContents &file_contents);
     }

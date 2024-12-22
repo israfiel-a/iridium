@@ -111,7 +111,7 @@ namespace Iridium
         }
 
         std::ifstream::pos_type file_size = file_stream.tellg();
-        this->contents = std::vector<std::uint8_t>(file_size);
+        this->contents.resize(file_size);
 
         // Read any content.
         if (file_size > 0)
