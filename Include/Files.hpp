@@ -102,7 +102,7 @@ namespace Iridium
              */
             inline const FilePath &GetPath() const noexcept
             {
-                return this->path;
+                return path;
             }
 
             /**
@@ -111,7 +111,7 @@ namespace Iridium
              */
             inline FilePath GetBasename() const noexcept
             {
-                return this->path.stem();
+                return path.stem();
             }
 
             /**
@@ -121,7 +121,7 @@ namespace Iridium
              */
             inline FilePath GetExtension() const noexcept
             {
-                return this->path.extension();
+                return path.extension();
             }
 
             /**
@@ -130,7 +130,7 @@ namespace Iridium
              */
             inline const FileContents &GetContents() const noexcept
             {
-                return this->contents;
+                return contents;
             }
 
             /**
@@ -139,7 +139,7 @@ namespace Iridium
              */
             inline std::size_t GetSize() const noexcept
             {
-                return this->contents.size();
+                return contents.size();
             }
 
             /**
@@ -148,7 +148,7 @@ namespace Iridium
              */
             inline MIME::FileMIME GetType() const noexcept
             {
-                return MIME::GetFiletype(this->GetContents());
+                return MIME::GetFiletype(GetContents());
             }
 
             /**
@@ -163,8 +163,7 @@ namespace Iridium
              */
             inline std::string Stringify() const noexcept
             {
-                return std::string(this->contents.begin(),
-                                   this->contents.end());
+                return std::string(contents.begin(), contents.end());
             }
 
             /**

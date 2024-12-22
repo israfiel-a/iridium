@@ -9,11 +9,8 @@
  * entails, see the LICENSE file provided with the engine.
  */
 
-// The parent header file.
 #include <Files.hpp>
-// C++ standard file streams.
 #include <fstream>
-// C++ standard iterators.
 #include <iterator>
 
 /**
@@ -90,10 +87,10 @@ namespace Iridium
         return "application/octet-stream";
     }
 
-    File::File(const FilePath &path)
+    File::File(const FilePath &file_path)
     {
-        this->path = NormalizePath(path);
-        if (!std::filesystem::is_regular_file(this->path))
+        path = NormalizePath(file_path);
+        if (!std::filesystem::is_regular_file(path))
         {
             // No proper error recorder exists yet, so just fail the thread
             // as a placeholder.
@@ -102,8 +99,7 @@ namespace Iridium
 
         // Open the file in raw binary mode and with the position pointer
         // at the end of the buffer.
-        std::ifstream file_stream(this->path,
-                                  std::ios::binary | std::ios::ate);
+        std::ifstream file_stream(path, std::ios::binary | std::ios::ate);
         if (!file_stream.is_open())
         {
             // Follows the above comment.
@@ -111,23 +107,23 @@ namespace Iridium
         }
 
         std::ifstream::pos_type file_size = file_stream.tellg();
-        this->contents.resize(file_size);
+        contents.resize(file_size);
 
         // Read any content.
         if (file_size > 0)
         {
             file_stream.seekg(0, std::ios::beg);
-            file_stream.read((char *)this->contents.data(), file_size);
+            file_stream.read((char *)contents.data(), file_size);
         }
     }
 
     const std::string &File::StringifyMetadata() const noexcept
     {
         static std::string metadata_string =
-            "File \"" + this->GetBasename().string() + "\" (" +
-            std::to_string(this->GetSize()) +
-            " bytes):\n\tFull Path: " + this->GetPath().string() +
-            "\n\tMIME Type: " + this->GetType() + "\n";
+            "File \"" + GetBasename().string() + "\" (" +
+            std::to_string(GetSize()) +
+            " bytes):\n\tFull Path: " + GetPath().string() +
+            "\n\tMIME Type: " + GetType() + "\n";
         return metadata_string;
     }
 
@@ -139,15 +135,14 @@ namespace Iridium
         std::ios_base::fmtflags saved_flags(output.flags());
         output << std::uppercase << std::hex;
 
-        const std::size_t max_rows = this->contents.size() / column_count;
+        const std::size_t max_rows = contents.size() / column_count;
         for (std::size_t current_row = 0; current_row < max_rows;
              current_row++)
         {
             const std::size_t row_begin = current_row * column_count;
             const std::size_t row_end = row_begin + column_count;
             const std::vector<std::uint8_t> row(
-                this->contents.begin() + row_begin,
-                this->contents.begin() + row_end);
+                contents.begin() + row_begin, contents.begin() + row_end);
 
             output << std::setfill('0');
             // Print the line number.
