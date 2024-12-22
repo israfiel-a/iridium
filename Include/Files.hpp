@@ -12,8 +12,6 @@
 #ifndef IRIDIUM_FILES_HPP
 #define IRIDIUM_FILES_HPP
 
-// C standard fixed-width integers.
-#include <cstdint>
 // C++ standard I/O operations.
 #include <iostream>
 // C++ filesystem library.

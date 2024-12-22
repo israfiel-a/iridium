@@ -1,5 +1,19 @@
+/**
+ * @file Files.cpp
+ * @author Israfil Argos (israfiel-a)
+ * @date 2024-12-21
+ * @brief The implementation file of Iridium's file management interface.
+ *
+ * Copyright (c) 2024 Israfil Argos
+ * This file is under the AGPLv3. For more information on what that
+ * entails, see the LICENSE file provided with the engine.
+ */
+
+// The parent header file.
 #include <Files.hpp>
+// C++ standard file streams.
 #include <fstream>
+// C++ standard iterators.
 #include <iterator>
 
 /**
