@@ -138,7 +138,7 @@ namespace Iridium
 
         const std::size_t max_rows = contents.size() / column_count;
         for (std::size_t current_row = 0; current_row < max_rows;
-             current_row++)
+             ++current_row)
         {
             const std::size_t row_begin = current_row * column_count;
             const std::size_t row_end = row_begin + column_count;

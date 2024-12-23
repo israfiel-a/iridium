@@ -3,6 +3,7 @@
 
 int main()
 {
-    Iridium::Errors::Push(Iridium::Errors::failed_null_assertion);
+    Iridium::Errors::Push(
+        Iridium::Errors::Information::failed_null_assertion);
     std::cout << Iridium::Errors::Pull().Stringify() << std::endl;
 }
