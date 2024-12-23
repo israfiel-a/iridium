@@ -1,8 +1,8 @@
-#include <Files.hpp>
-#include <Ignition.hpp>
+#include <Errors.hpp>
+#include <iostream>
 
 int main()
 {
-    Iridium::File opened_file("cat.jpeg");
-    opened_file.Hexdump();
+    Iridium::Errors::Push(Iridium::Errors::failed_null_assertion);
+    std::cout << Iridium::Errors::Pull().Stringify() << std::endl;
 }

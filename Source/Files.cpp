@@ -87,7 +87,7 @@ namespace Iridium
         return "application/octet-stream";
     }
 
-    File::File(const FilePath &file_path)
+    ImmutableFile::ImmutableFile(const FilePath &file_path)
     {
         path = NormalizePath(file_path);
         if (!std::filesystem::is_regular_file(path))
@@ -117,7 +117,7 @@ namespace Iridium
         }
     }
 
-    const std::string &File::StringifyMetadata() const noexcept
+    const std::string &ImmutableFile::StringifyMetadata() const noexcept
     {
         static std::string metadata_string =
             "File \"" + GetBasename().string() + "\" (" +
@@ -127,8 +127,9 @@ namespace Iridium
         return metadata_string;
     }
 
-    void File::Hexdump(std::ostream &output, std::uint32_t column_count,
-                       bool characters) const
+    void ImmutableFile::Hexdump(std::ostream &output,
+                                std::size_t column_count,
+                                bool characters) const
     {
         // Save the flags of the output stream so we can restore them
         // afterward.

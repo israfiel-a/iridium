@@ -11,9 +11,7 @@
 #ifndef IRIDIUM_VERSION_HPP
 #define IRIDIUM_VERSION_HPP
 
-// Fixed-width integers.
 #include <cstdint>
-// The C++ standard string class.
 #include <string>
 
 /**

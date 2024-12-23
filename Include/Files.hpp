@@ -30,6 +30,10 @@ namespace Iridium
      * @brief A file's contents. This is an STL vector of unsigned bytes.
      */
     using FileContents = std::vector<std::uint8_t>;
+    /**
+     * @brief A live handle to a file object.
+     */
+    using FileHandle = std::fstream;
 
     /**
      * @brief Utilities having to do with MIME type.
@@ -66,14 +70,19 @@ namespace Iridium
         constexpr std::string_view generic_mime =
             "application/octet-stream";
 
+        /**
+         * @brief Get the filetype of a file using its signature.
+         * @param file_contents The contents of the file.
+         * @return The file's inferred MIME.
+         */
         FileMIME GetFiletype(const FileContents &file_contents);
     }
 
     /**
-     * @brief A file object. This is not for writing, it's just for
-     * reading. For writing, see MutableFile.
+     * @brief An immutable file object. This is not for writing, it's just
+     * for reading. For writing, see MutableFile.
      */
-    class File
+    class ImmutableFile
     {
         private:
             /**
@@ -93,7 +102,7 @@ namespace Iridium
              * @param path The path to the file within the game's asset
              * directory.
              */
-            File(const FilePath &path);
+            ImmutableFile(const FilePath &path);
 
             /**
              * @brief Get the directory within the game's asset directory
@@ -177,7 +186,7 @@ namespace Iridium
              * one.
              */
             void Hexdump(std::ostream &output = std::cout,
-                         std::uint32_t column_count = 32,
+                         std::size_t column_count = 32,
                          bool characters = true) const;
     };
 

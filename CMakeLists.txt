@@ -2,7 +2,7 @@
 # library and doesn't provide configuration options.
 
 cmake_minimum_required(VERSION 3.30 FATAL_ERROR)
-project(Iridium VERSION 1.1.0 LANGUAGES CXX DESCRIPTION "A 3D game engine built in C++17.")
+project(Iridium VERSION 1.1.0 LANGUAGES CXX C DESCRIPTION "A 3D game engine built in C++17.")
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 
 # Make sure the project is compiled via the correct C++ version.
@@ -28,15 +28,18 @@ set(IRIDIUM_DEMO_DIR "${CMAKE_SOURCE_DIR}/Demos")
 include_directories(${IRIDIUM_INCLUDE_DIR})
 
 # Note down all the files this project contains.
-set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Ignition.hpp" "${IRIDIUM_INCLUDE_DIR}/Version.hpp"
-    "${IRIDIUM_INCLUDE_DIR}/Files.hpp")
-set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Ignition.cpp" "${IRIDIUM_SOURCE_DIR}/Version.cpp"
-    "${IRIDIUM_SOURCE_DIR}/Files.cpp")
+set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Version.hpp" "${IRIDIUM_INCLUDE_DIR}/Files.hpp" 
+    "${IRIDIUM_INCLUDE_DIR}/Window.hpp" "${IRIDIUM_INCLUDE_DIR}/Logging.hpp" 
+    "${IRIDIUM_INCLUDE_DIR}/Errors.hpp")
+set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Version.cpp" "${IRIDIUM_SOURCE_DIR}/Files.cpp"
+    "${IRIDIUM_SOURCE_DIR}/Window.cpp" "${IRIDIUM_SOURCE_DIR}/Wayland/Wayland.cpp"
+    "${IRIDIUM_SOURCE_DIR}/Logging.cpp" "${IRIDIUM_SOURCE_DIR}/Errors.cpp")
 
 # Create the Iridium library.
 add_library(Iridium SHARED ${IRIDIUM_SOURCE_FILES})
 set_target_properties(Iridium PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(Iridium PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
+target_link_libraries(Iridium wayland-client)
 
 # Create Demo Executables
 file(GLOB IRIDIUM_DEMO_FILES ${IRIDIUM_DEMO_DIR}/*.cpp)
