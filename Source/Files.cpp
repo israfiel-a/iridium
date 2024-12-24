@@ -61,7 +61,7 @@ std::ostream &operator<<(std::ostream &output,
     else return output << std::setw(W) << output.fill();
 }
 
-namespace Iridium
+namespace Iridium::Files
 {
     std::string MIME::GetFiletype(const FileContents &file_contents)
     {

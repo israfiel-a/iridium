@@ -17,9 +17,10 @@
 #include <vector>
 
 /**
- * @brief The Iridium namespace.
+ * @brief The Iridium file manipulation namespace. This contains methods
+ * for writing, reading, and handling different kinds of files.
  */
-namespace Iridium
+namespace Iridium::Files
 {
     /**
      * @brief The path to a file. This is an STL filesystem::path

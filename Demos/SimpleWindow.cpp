@@ -1,9 +1,11 @@
-#include <Errors.hpp>
-#include <iostream>
+#include <Logging.hpp>
 
 int main()
 {
-    Iridium::Errors::Push(
-        Iridium::Errors::Information::failed_null_assertion);
-    std::cout << Iridium::Errors::Pull().Stringify() << std::endl;
+    Iridium::Logging::RaiseError(Iridium::Logging::failed_null_assertion);
+    Iridium::Logging::SuppressErrors();
+    Iridium::Logging::RaiseError(Iridium::Logging::failed_null_assertion,
+                                 Iridium::Logging::panic);
+    Iridium::Logging::RaiseError(Iridium::Logging::failed_null_assertion);
+    Iridium::Logging::SuppressErrors();
 }
