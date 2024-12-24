@@ -5,7 +5,7 @@
  * @brief The Iridium Wayland namespace. This provides proper functionality
  * for Wayland protocols within Iridium.
  */
-namespace Iridium::Wayland
+namespace Iridium::Windowing::Wayland
 {
     /**
      * @brief Connect the Wayland server to our program. This blocks to

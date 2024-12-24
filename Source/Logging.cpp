@@ -1,14 +1,23 @@
+/**
+ * @file Logging.cpp
+ * @author Israfil Argos (israfiel-a)
+ * @date 2024-12-22
+ * @brief This file provides the implementation of the Iridium logging
+ * interface.
+ *
+ * Copyright (c) 2024 Israfil Argos
+ * This file is under the AGPLv3. For more information on what that
+ * entails, see the LICENSE file provided with the engine.
+ */
+
 #include <Logging.hpp>
 #include <filesystem>
 #include <format>
 #include <map>
 #include <vector>
 
-/**
- * @brief The application's error stack. This contains up to 15 of the most
- * recent errors thrown.
- */
-static std::vector<Iridium::Logging::Error> error_stack;
+// Syntax sugar for the static, outside-of-namespace stuff.
+using namespace Iridium::Logging;
 
 /**
  * @brief Information about an error code like its string name and
@@ -24,82 +33,93 @@ struct ErrorInfo
         /**
          * @brief The severity of the error code.
          */
-        Iridium::Logging::Severity severity;
+        Severity severity;
 };
 
-const static std::map<Iridium::Logging::ErrorCode, ErrorInfo>
-    error_information = {
-        std::make_pair(
-            Iridium::Logging::failed_null_assertion,
-            ErrorInfo("failed_null_assertion", Iridium::Logging::error)),
-        std::make_pair(
-            Iridium::Logging::bad_parameter,
-            ErrorInfo("bad_parameter", Iridium::Logging::error)),
-        std::make_pair(Iridium::Logging::destination_too_small,
-                       ErrorInfo("destination_too_small",
-                                 Iridium::Logging::warning))};
+/**
+ * @brief A map of the various error codes and their information.
+ */
+const static std::map<ErrorCode, ErrorInfo> error_information = {
+    std::make_pair(failed_null_assertion,
+                   ErrorInfo("failed_null_assertion", error)),
+    std::make_pair(bad_parameter, ErrorInfo("bad_parameter", error)),
+    std::make_pair(destination_too_small,
+                   ErrorInfo("destination_too_small", warning))};
 
+/**
+ * @brief The application's error stack. This contains up to 10 of the most
+ * recent errors thrown.
+ */
+static std::vector<Iridium::Logging::Error> error_stack;
+
+/**
+ * @brief A boolean flag representing whether or not we should suppress the
+ * logging of errors, sans panics.
+ */
 static bool suppress_errors = false;
 
-static std::ostream *general_output = &std::cout;
+/**
+ * @brief The output stream for general things; logs and successes. This is
+ * also the default output for warnings, errors, and panics.
+ */
+static Output *general_output = &std::cout;
 
-static std::ostream *warning_output = general_output;
+/**
+ * @brief The output for errors/warnings. This is the general output by
+ * default.
+ */
+static Output *error_output = general_output;
 
-static std::ostream *error_output = general_output;
+/**
+ * @brief Cull the error stack. This simply removes the oldest/first
+ * element in the stack should it be at the proper threshold.
+ */
+static void CullStack() noexcept
+{
+    if (error_stack.size() >= 10) error_stack.erase(error_stack.begin());
+}
+
+/**
+ * @brief Format the body string of a loggable object. The resulting object
+ * will have the format of `[file_name] @ ln.[line_count]
+ * cl.[column_count], "[function_signature]" - ` Note the space at the end.
+ * @param severity The severity of the loggable.
+ * @param location The location the loggable was initialized from.
+ * @return A string representing the loggable.
+ */
+static std::string FormatLoggable(Severity severity,
+                                  const Location &location)
+{
+    return std::format(
+        "{}{} @ ln.{} cl.{}, \"{}\" - ",
+        std::filesystem::path(location.file_name()).stem().string(),
+        std::filesystem::path(location.file_name()).extension().string(),
+        std::to_string(location.line()), std::to_string(location.column()),
+        location.function_name());
+}
 
 namespace Iridium::Logging
 {
     Loggable::Loggable(const std::string &body_string, Severity severity,
                        const Location &location)
-        : severity(severity)
+        : body(FormatLoggable(severity, location) + body_string),
+          severity(severity)
     {
-        body = std::format(
-            "{}{} @ ln.{} cl.{}, \"{}\" - {}",
-            std::filesystem::path(location.file_name()).stem().string(),
-            std::filesystem::path(location.file_name())
-                .extension()
-                .string(),
-            std::to_string(location.line()),
-            std::to_string(location.column()), location.function_name(),
-            body_string);
     }
 
-    Loggable::Loggable(const char *body_string, Severity severity,
-                       const Location &location)
-        : severity(severity)
-    {
-        body = std::format(
-            "{}{} @ ln.{} cl.{}, \"{}\" - {}",
-            std::filesystem::path(location.file_name()).stem().string(),
-            std::filesystem::path(location.file_name())
-                .extension()
-                .string(),
-            std::to_string(location.line()),
-            std::to_string(location.column()), location.function_name(),
-            body_string);
-    }
-
-    Error::Error(ErrorCode code, Severity severity, Context context,
-                 Location location)
-        : Loggable("", severity, location), code(code)
+    Error::Error(ErrorCode code, Severity severity_value, Context context,
+                 const Location &location)
+        : Loggable("", severity_value, location), code(code)
     {
         const ErrorInfo &code_information = error_information.at(code);
+        if (severity_value == infer || severity_value == success)
+            severity = code_information.severity;
 
-        if (severity == infer || severity == success)
-            this->severity = code_information.severity;
-        body = std::format(
-            "{}{} @ ln.{} cl.{}, \"{}\" - {}, {}",
-            std::filesystem::path(location.file_name()).stem().string(),
-            std::filesystem::path(location.file_name())
-                .extension()
-                .string(),
-            std::to_string(location.line()),
-            std::to_string(location.column()), location.function_name(),
-            code_information.name, std::to_string(this->severity));
+        body += code_information.name + ", " + std::to_string(severity);
         if (!context.empty()) body += "\n\tContext: " + context;
     }
 
-    bool SetGeneralOutput(std::ostream *output)
+    bool SetGeneralOutput(Output *output) noexcept
     {
         if (output == nullptr)
         {
@@ -110,7 +130,7 @@ namespace Iridium::Logging
         if (!output->good())
         {
             RaiseError(bad_parameter, infer,
-                       "output stream had badbit set");
+                       "output stream has badbit set");
             return false;
         }
 
@@ -118,13 +138,7 @@ namespace Iridium::Logging
         return true;
     }
 
-    void SetWarningOutput(std::ostream *output) noexcept
-    {
-        if (output != nullptr) warning_output = output;
-        else warning_output = general_output;
-    }
-
-    void SetErrorOutput(std::ostream *output) noexcept
+    void SetErrorOutput(Output *output) noexcept
     {
         if (output != nullptr) error_output = output;
         else error_output = general_output;
@@ -134,16 +148,12 @@ namespace Iridium::Logging
     {
         switch (loggable.GetSeverity())
         {
-            case infer:
-            case log:
-                (*general_output) << loggable.GetBody() << "\n";
-                break;
             case success:
                 (*general_output)
                     << "\033[32m" << loggable.GetBody() << "\033[0m\n";
                 break;
             case warning:
-                (*warning_output)
+                (*error_output)
                     << "\033[33m" << loggable.GetBody() << "\033[0m\n";
                 break;
             case error:
@@ -153,6 +163,9 @@ namespace Iridium::Logging
             case panic:
                 (*error_output)
                     << "\033[31;1m" << loggable.GetBody() << "\033[0m\n";
+                break;
+            default:
+                (*general_output) << loggable.GetBody() << "\n";
                 break;
         }
     }
@@ -171,55 +184,43 @@ namespace Iridium::Logging
 
     void RaiseError(Error error)
     {
-        // If we've reached the stack size limit, simply remove the oldest
-        // error from the stack.
-        if (error_stack.size() == 15)
-            error_stack.erase(error_stack.begin());
+        CullStack();
         error_stack.push_back(error);
 
         if (!suppress_errors || error.GetSeverity() == panic) Log();
-
         if (error.GetSeverity() == panic) throw PanicException();
     }
 
     void RaiseError(ErrorCode code, Severity severity, Context context,
                     const Location &location)
     {
-        // If we've reached the stack size limit, simply remove the oldest
-        // error from the stack.
-        if (error_stack.size() == 15)
-            error_stack.erase(error_stack.begin());
+        CullStack();
         Error constructed_error(code, severity, context, location);
         error_stack.push_back(constructed_error);
 
         if (!suppress_errors || constructed_error.GetSeverity() == panic)
             Log();
-
         if (constructed_error.GetSeverity() == panic)
             throw PanicException();
     }
 
-    Error PullError()
+    Error PullError() noexcept
     {
-        if (error_stack.empty())
-            throw std::out_of_range("error stack empty");
-
+        if (error_stack.empty()) RaiseError(destination_too_small);
         Error last_error = error_stack.back();
         error_stack.pop_back();
         return last_error;
     }
 
-    const Error &GetError()
+    const Error &GetError() noexcept
     {
-        if (error_stack.empty())
-            throw std::out_of_range("error stack empty");
+        if (error_stack.empty()) RaiseError(destination_too_small);
         return error_stack.back();
     }
 
-    const Error &GetError(std::size_t index)
+    const Error &GetError(std::size_t index) noexcept
     {
-        if (error_stack.empty() || index >= error_stack.size())
-            throw std::out_of_range("out of error stack boundaries");
+        if (error_stack.empty()) RaiseError(destination_too_small);
         return error_stack.at(index);
     }
 

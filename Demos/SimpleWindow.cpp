@@ -1,3 +1,3 @@
 #include <Logging.hpp>
 
-int main() { Iridium::Logging::PullError(); }
+int main() { Iridium::Logging::Log("hi"); }

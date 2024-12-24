@@ -1,7 +1,7 @@
 #include "Wayland/Wayland.hpp"
 #include <Window.hpp>
 
-namespace Iridium
+namespace Iridium::Windowing
 {
     Window::Window(const std::string &name) { Wayland::Connect(); }
 

@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace Iridium
+namespace Iridium::Windowing
 {
     class Window
     {

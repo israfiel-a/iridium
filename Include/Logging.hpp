@@ -97,6 +97,11 @@ namespace Iridium::Logging
     using Context = std::string;
 
     /**
+     * @brief An output stream for logging items.
+     */
+    using Output = std::ostream;
+
+    /**
      * @brief A loggable item. This can be passed to any of the logging
      * functions and produce a formatted result.
      */
@@ -125,8 +130,7 @@ namespace Iridium::Logging
              * came.
              */
             Loggable(const std::string &body, Severity severity = log,
-                     const Location &location =
-                         std::source_location::current());
+                     const Location &location = Location::current());
 
             /**
              * @brief Create a new loggable using just a string.
@@ -137,8 +141,10 @@ namespace Iridium::Logging
              * came.
              */
             Loggable(const char *body, Severity severity = log,
-                     const Location &location =
-                         std::source_location::current());
+                     const Location &location = Location::current())
+                : Loggable(std::string(body), severity, location)
+            {
+            }
 
             /**
              * @brief Get the body of the loggable; what's actually going
@@ -186,7 +192,7 @@ namespace Iridium::Logging
              */
             Error(ErrorCode code, Severity severity = infer,
                   Context context = "",
-                  Location location = std::source_location::current());
+                  const Location &location = Location::current());
 
             /**
              * @brief Get the error code.
@@ -202,11 +208,6 @@ namespace Iridium::Logging
     class PanicException : public std::exception
     {
         public:
-            /**
-             * @brief Create a new fatal exception.
-             */
-            PanicException() = default;
-
             /**
              * @brief Get an explanation of what this exception is.
              * @return The string "An engine panic was raised, check exit
@@ -232,29 +233,18 @@ namespace Iridium::Logging
      * characterized by an output stream with badbit set or a straight null
      * input.
      */
-    bool SetGeneralOutput(std::ostream *output = &std::cout);
+    bool SetGeneralOutput(Output *output = &std::cout) noexcept;
 
     /**
-     * @brief Set the interface for which to output warning messages. By
-     * default, this is the general output. To reset it to the general
+     * @brief Set the interface for which to output error/warning messages.
+     * By default, this is the general output. To reset it to the general
      * output, pass nullptr to this function.
      * @param output The output object.
      * @return true The operation succeeded.
      * @return false The operation failed. Error code logged to the error
      * stack.
      */
-    void SetWarningOutput(std::ostream *output) noexcept;
-
-    /**
-     * @brief Set the interface for which to output error messages. By
-     * default, this is the general output. To reset it to the general
-     * output, pass nullptr to this function.
-     * @param output The output object.
-     * @return true The operation succeeded.
-     * @return false The operation failed. Error code logged to the error
-     * stack.
-     */
-    void SetErrorOutput(std::ostream *output) noexcept;
+    void SetErrorOutput(Output *output) noexcept;
 
     /**
      * @brief Log a loggable into its proper output.
@@ -302,20 +292,20 @@ namespace Iridium::Logging
      * higher-level functions see an error's been hit.
      * @return The last-thrown error code.
      *
-     * @warning Should the error stack be empty this will fail the
-     * thread with an std::out_of_range exception.
+     * @warning Should the error stack be empty this will push a
+     * destination_too_small warning.
      */
-    Error PullError();
+    Error PullError() noexcept;
 
     /**
      * @brief Get the last error from the error stack and return it. This
      * does not change the error stack, unlike Pull.
      * @return The last-thrown error code.
      *
-     * @warning Should the error stack be empty this will fail the thread
-     * with an std::out_of_range exception.
+     * @warning Should the error stack be empty this will push a
+     * destination_too_small warning.
      */
-    const Error &GetError();
+    const Error &GetError() noexcept;
 
     /**
      * @brief Get the error at the specified index from the error stack and
@@ -324,10 +314,10 @@ namespace Iridium::Logging
      * @return The error retrieved.
      *
      * @warning Should the error stack be empty or should the index be out
-     * of bounds for the error stack, this will fail the thread with an
-     * std::out_of_range exception.
+     * of error stack bounds this will push a destination_too_small
+     * warning.
      */
-    const Error &GetError(std::size_t index);
+    const Error &GetError(std::size_t index) noexcept;
 
     /**
      * @brief Toggle the suppression of error logging. This does not

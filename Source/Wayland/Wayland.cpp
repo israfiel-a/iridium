@@ -28,7 +28,7 @@ static Registry registry;
 static const RegistryListener registry_listener = {RegistryHandleAddition,
                                                    RegistryHandleRemoval};
 
-namespace Iridium::Wayland
+namespace Iridium::Windowing::Wayland
 {
     bool Connect()
     {
