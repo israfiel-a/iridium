@@ -260,7 +260,7 @@ namespace Iridium::Logging
      * @brief Log a loggable into its proper output.
      * @param loggable The loggable to log.
      */
-    void Log(const Loggable &loggable);
+    void Log(const Loggable &loggable) noexcept;
 
     /**
      * @brief Log the last error on the error stack.
@@ -272,21 +272,25 @@ namespace Iridium::Logging
 
     /**
      * @brief Push an error onto the error stack. This will log the given
-     * error should suppression not currently be on. Should the pushed
-     * error be fatal, a FatalException will be thrown.
+     * error should suppression not currently be on.
      * @param code The error. This is copied into the error stack.
+     *
+     * @warning If the passed error is a panic, a PanicException will be
+     * thrown.
      */
     void RaiseError(Error error);
 
     /**
      * @brief Push an error onto the error stack. This will log the given
-     * error should suppression not currently be on. Should the pushed
-     * error be fatal, a FatalException will be thrown.
+     * error should suppression not currently be on.
      * @param code The error.
      * @param severity The severity of the error.
      * @param context Any extra context to be provided for the error.
      * @param location The source code location from which the error was
      * raised.
+     *
+     * @warning If the passed error is a panic, a PanicException will be
+     * thrown.
      */
     void RaiseError(ErrorCode code, Severity severity = infer,
                     Context context = "",
@@ -297,8 +301,11 @@ namespace Iridium::Logging
      * is useful for error handling functions that don't want to let
      * higher-level functions see an error's been hit.
      * @return The last-thrown error code.
+     *
+     * @warning Should the error stack be empty this will fail the
+     * thread with an std::out_of_range exception.
      */
-    Error PullError() noexcept;
+    Error PullError();
 
     /**
      * @brief Get the last error from the error stack and return it. This
@@ -329,7 +336,7 @@ namespace Iridium::Logging
      * @return true Errors are currently being suppressed.
      * @return false Errors are not currently being suppressed.
      */
-    bool SuppressErrors();
+    bool SuppressErrors() noexcept;
 }
 
 #endif // IRIDIUM_LOGGING_HPP

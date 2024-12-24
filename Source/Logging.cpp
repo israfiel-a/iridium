@@ -130,7 +130,7 @@ namespace Iridium::Logging
         else error_output = general_output;
     }
 
-    void Log(const Loggable &loggable)
+    void Log(const Loggable &loggable) noexcept
     {
         switch (loggable.GetSeverity())
         {
@@ -199,8 +199,11 @@ namespace Iridium::Logging
             throw PanicException();
     }
 
-    Error PullError() noexcept
+    Error PullError()
     {
+        if (error_stack.empty())
+            throw std::out_of_range("error stack empty");
+
         Error last_error = error_stack.back();
         error_stack.pop_back();
         return last_error;
@@ -220,7 +223,7 @@ namespace Iridium::Logging
         return error_stack.at(index);
     }
 
-    bool SuppressErrors()
+    bool SuppressErrors() noexcept
     {
         suppress_errors = !suppress_errors;
         return suppress_errors;
