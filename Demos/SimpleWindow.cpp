@@ -1,3 +1,3 @@
-#include <Logging.hpp>
+#include <Window.hpp>
 
-int main() { Iridium::Logging::Log("hi"); }
+int main() { Iridium::Windowing::Window window("test"); }

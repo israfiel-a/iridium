@@ -44,7 +44,9 @@ const static std::map<ErrorCode, ErrorInfo> error_information = {
                    ErrorInfo("failed_null_assertion", error)),
     std::make_pair(bad_parameter, ErrorInfo("bad_parameter", error)),
     std::make_pair(destination_too_small,
-                   ErrorInfo("destination_too_small", warning))};
+                   ErrorInfo("destination_too_small", warning)),
+    std::make_pair(file_open_failed,
+                   ErrorInfo("file_open_failed", error))};
 
 /**
  * @brief The application's error stack. This contains up to 10 of the most

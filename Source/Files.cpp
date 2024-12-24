@@ -10,6 +10,7 @@
  */
 
 #include <Files.hpp>
+#include <Logging.hpp>
 #include <fstream>
 #include <iterator>
 
@@ -92,9 +93,9 @@ namespace Iridium::Files
         path = NormalizePath(file_path);
         if (!std::filesystem::is_regular_file(path))
         {
-            // No proper error recorder exists yet, so just fail the thread
-            // as a placeholder.
-            exit(255);
+            Logging::RaiseError(Logging::bad_parameter, Logging::infer,
+                                "provided directory instead of file");
+            return;
         }
 
         // Open the file in raw binary mode and with the position pointer
@@ -102,8 +103,8 @@ namespace Iridium::Files
         std::ifstream file_stream(path, std::ios::binary | std::ios::ate);
         if (!file_stream.is_open())
         {
-            // Follows the above comment.
-            exit(255);
+            Logging::RaiseError(Logging::file_open_failed);
+            return;
         }
 
         std::ifstream::pos_type file_size = file_stream.tellg();

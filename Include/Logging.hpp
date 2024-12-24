@@ -41,7 +41,11 @@ namespace Iridium::Logging
          * @brief The destination of some data was too small to fit said
          * data.
          */
-        destination_too_small
+        destination_too_small,
+        /**
+         * @brief The engine failed to open a file.
+         */
+        file_open_failed
     };
 
     /**
