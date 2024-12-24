@@ -45,7 +45,11 @@ namespace Iridium::Logging
         /**
          * @brief The engine failed to open a file.
          */
-        file_open_failed
+        file_open_failed,
+        /**
+         * @brief The engine failed to connect to Wayland.
+         */
+        wayland_connection_failed
     };
 
     /**

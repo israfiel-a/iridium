@@ -1,4 +1,5 @@
 #include "Wayland.hpp"
+#include <Logging.hpp>
 #include <iostream>
 
 #include "_wl.h"
@@ -32,12 +33,16 @@ namespace Iridium::Windowing::Wayland
 {
     bool Connect()
     {
-        // Attempt to connect to the preferred Wayland socket.
         display = wl_display_connect(NULL);
-        if (display == NULL) exit(255);
-        // Get the global registry and wait for the server to sync up.
+        if (display == NULL)
+        {
+            Logging::RaiseError(Logging::wayland_connection_failed);
+            return false;
+        }
+
         registry = wl_display_get_registry(display);
         wl_registry_add_listener(registry, &registry_listener, NULL);
+        // Wait for the server to sync with us.
         wl_display_roundtrip(display);
 
         std::cout << "Connected!" << std::endl;
