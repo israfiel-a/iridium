@@ -83,6 +83,28 @@ static void CullStack() noexcept
 }
 
 /**
+ * @brief An inefficient function to translate the full function signature
+ * provided by std::source_location into just the function name,
+ * @param function The full function signature as returned by
+ * std::source_location::function_name.
+ * @return The name of the function passed.
+ */
+static std::string PrettyToUsableFunction(const char *function)
+{
+    std::string cleaned_function = function;
+
+    const std::size_t name_beginning =
+        cleaned_function.find_first_of(' ') + 1;
+    const std::size_t name_end = cleaned_function.find_first_of('(');
+    if (name_beginning == std::string::npos ||
+        name_end == std::string::npos)
+        return cleaned_function;
+
+    return cleaned_function.substr(name_beginning,
+                                   name_end - name_beginning);
+}
+
+/**
  * @brief Format the body string of a loggable object. The resulting object
  * will have the format of `[file_name] @ ln.[line_count]
  * cl.[column_count], "[function_signature]" - ` Note the space at the end.
@@ -94,11 +116,11 @@ static std::string FormatLoggable(Severity severity,
                                   const Location &location)
 {
     return std::format(
-        "{}{} @ ln.{} cl.{}, \"{}\" - ",
+        "{}{} @ ln.{} cl.{}, {} - ",
         std::filesystem::path(location.file_name()).stem().string(),
         std::filesystem::path(location.file_name()).extension().string(),
         std::to_string(location.line()), std::to_string(location.column()),
-        location.function_name());
+        PrettyToUsableFunction(location.function_name()));
 }
 
 namespace Iridium::Logging
@@ -171,6 +193,12 @@ namespace Iridium::Logging
                 (*general_output) << loggable.GetBody() << "\n";
                 break;
         }
+    }
+
+    void Log(const std::string &string, Severity severity,
+             const Location &location) noexcept
+    {
+        Log(Loggable(string, severity, location));
     }
 
     void Log()

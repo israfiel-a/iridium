@@ -261,6 +261,15 @@ namespace Iridium::Logging
     void Log(const Loggable &loggable) noexcept;
 
     /**
+     * @brief Log a loggable into its proper output.
+     * @param string The string to log.
+     * @param severity The severity of the log.
+     * @param location The location the log occurred at.
+     */
+    void Log(const std::string &string, Severity severity,
+             const Location &location = Location::current()) noexcept;
+
+    /**
      * @brief Log the last error on the error stack.
      *
      * @warning Should the error stack have a size of 0, this will log

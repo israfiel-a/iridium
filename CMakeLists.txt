@@ -32,13 +32,13 @@ set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Version.hpp" "${IRIDIUM_INCLUDE
     "${IRIDIUM_INCLUDE_DIR}/Window.hpp" "${IRIDIUM_INCLUDE_DIR}/Logging.hpp")
 set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Version.cpp" "${IRIDIUM_SOURCE_DIR}/Files.cpp"
     "${IRIDIUM_SOURCE_DIR}/Window.cpp" "${IRIDIUM_SOURCE_DIR}/Wayland/Wayland.cpp"
-    "${IRIDIUM_SOURCE_DIR}/Logging.cpp")
+    "${IRIDIUM_SOURCE_DIR}/Logging.cpp" "${IRIDIUM_SOURCE_DIR}/Wayland/_xsh.c")
 
 # Create the Iridium library.
 add_library(Iridium SHARED ${IRIDIUM_SOURCE_FILES})
 set_target_properties(Iridium PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(Iridium PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
-target_link_libraries(Iridium wayland-client)
+target_link_libraries(Iridium wayland-client vulkan)
 
 # Create Demo Executables
 file(GLOB IRIDIUM_DEMO_FILES ${IRIDIUM_DEMO_DIR}/*.cpp)
