@@ -1,5 +1,5 @@
-#ifndef IRIDIUM_WAYLAND_WAYLAND_HPP
-#define IRIDIUM_WAYLAND_WAYLAND_HPP
+#ifndef IRIDIUM_WAYLAND_HPP
+#define IRIDIUM_WAYLAND_HPP
 
 /**
  * @brief The Iridium Wayland namespace. This provides proper functionality
@@ -22,4 +22,4 @@ namespace Iridium::Windowing::Wayland
     void Disconnect();
 }
 
-#endif // IRIDIUM_WAYLAND_WAYLAND_HPP
+#endif // IRIDIUM_WAYLAND_HPP

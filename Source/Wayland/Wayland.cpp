@@ -23,9 +23,15 @@ static Registry registry;
 static Compositor compositor;
 static WindowManager window_manager;
 
+static Surface surface;
+static WindowManagerSurface wm_surface;
+static Window window;
+
 bool resize = true;
 bool ready_to_resize = false;
 bool quit = false;
+
+//! all null to nullptr
 
 int32_t new_width = 0, new_height = 0;
 
@@ -47,6 +53,9 @@ static void HandleWindowConfigure(void *data, Window passed_window,
 {
     if (width != 0 && height != 0)
     {
+        Iridium::Logging::Log(
+            "Window resized. New dimensions: " + std::to_string(width) +
+            "x" + std::to_string(height));
         resize = true;
         new_width = width;
         new_height = height;
@@ -121,12 +130,11 @@ namespace Iridium::Windowing::Wayland
         // Wait for the server to sync with us.
         wl_display_roundtrip(display);
 
-        Surface surface = wl_compositor_create_surface(compositor);
-        WindowManagerSurface wm_surface =
-            xdg_wm_base_get_xdg_surface(window_manager, surface);
+        surface = wl_compositor_create_surface(compositor);
+        wm_surface = xdg_wm_base_get_xdg_surface(window_manager, surface);
         xdg_surface_add_listener(wm_surface, &wms_listener, NULL);
 
-        Window window = xdg_surface_get_toplevel(wm_surface);
+        window = xdg_surface_get_toplevel(wm_surface);
         xdg_toplevel_add_listener(window, &window_listener, NULL);
 
         xdg_toplevel_set_title(window, "SimpleWindow");
@@ -141,7 +149,11 @@ namespace Iridium::Windowing::Wayland
 
     void Disconnect()
     {
+        xdg_toplevel_destroy(window);
+        xdg_surface_destroy(wm_surface);
+        wl_surface_destroy(surface);
         xdg_wm_base_destroy(window_manager);
+
         wl_compositor_destroy(compositor);
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
