@@ -27,7 +27,7 @@ static Surface surface;
 static WindowManagerSurface wm_surface;
 static Window window;
 
-bool resize = true;
+bool resize = false;
 bool ready_to_resize = false;
 bool quit = false;
 
@@ -49,17 +49,18 @@ static void HandleWMSConfigure(void *data, WindowManagerSurface passed_wms,
 }
 
 static void HandleWindowConfigure(void *data, Window passed_window,
-                                  int32_t width, int32_t height,
+                                  int32_t passed_width,
+                                  int32_t passed_height,
                                   struct wl_array *states)
 {
-    if (width != 0 && height != 0)
+    if (passed_width != 0 && passed_height != 0)
     {
-        Iridium::Logging::Log(
-            "Window resized. New dimensions: " + std::to_string(width) +
-            "x" + std::to_string(height));
+        Iridium::Logging::Log("Window resized. New dimensions: " +
+                              std::to_string(passed_width) + "x" +
+                              std::to_string(passed_height));
         resize = true;
-        new_width = width;
-        new_height = height;
+        new_width = passed_width;
+        new_height = passed_height;
     }
 }
 

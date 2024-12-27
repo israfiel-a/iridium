@@ -1,12 +1,12 @@
 #include "Vulkan.hpp"
 #include <Logging.hpp>
+
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_wayland.h>
 
 using GPU = VkPhysicalDevice;
 using GPUProperties = VkPhysicalDeviceProperties;
 using GPUFeatures = VkPhysicalDeviceFeatures;
-
 using ScoreType = std::uint8_t;
 
 VkInstance instance = nullptr;
@@ -301,9 +301,8 @@ namespace Iridium::Vulkan
         //     createInfo.ppEnabledLayerNames = layerNames;
         // }
 
-        VkResult res = vkCreateDevice(gpu_device, &device_create_info,
-                                      NULL, &gpu_logical_device);
-        if (res != VK_SUCCESS) std::cout << "failure " << res << std::endl;
+        vkCreateDevice(gpu_device, &device_create_info, NULL,
+                       &gpu_logical_device);
         vkGetDeviceQueue(gpu_logical_device, queue_family_index, 0,
                          &queue);
 
@@ -377,10 +376,8 @@ namespace Iridium::Vulkan
         createInfo.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
         createInfo.clipped = 1;
 
-        std::cout << vkCreateSwapchainKHR(gpu_logical_device, &createInfo,
-                                          NULL, &swapchain)
-                  << "\n\n"
-                  << std::endl;
+        vkCreateSwapchainKHR(gpu_logical_device, &createInfo, nullptr,
+                             &swapchain);
 
         VkAttachmentDescription attachment = {0};
         attachment.format = format;

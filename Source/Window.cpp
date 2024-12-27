@@ -8,6 +8,7 @@ namespace Iridium::Windowing
     {
         Wayland::Connect();
         Vulkan::Connect(Wayland::GetDisplay(), Wayland::GetSurface());
+        Vulkan::StartSwapchain(500, 500);
 
         while (!Wayland::ShouldWindowClose())
         {
@@ -19,7 +20,7 @@ namespace Iridium::Windowing
 
     Window::~Window()
     {
-        Wayland::Disconnect();
         Vulkan::Disconnect();
+        Wayland::Disconnect();
     }
 }
