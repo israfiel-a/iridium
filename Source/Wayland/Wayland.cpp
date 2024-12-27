@@ -2,14 +2,14 @@
 #include <Logging.hpp>
 #include <cstring>
 
+#include "../Vulkan/Vulkan.hpp"
+
 #include "_wl.h"
 #include "_xsh.h"
 
-using Display = struct wl_display *;
 using Registry = struct wl_registry *;
 using Compositor = struct wl_compositor *;
 using WindowManager = struct xdg_wm_base *;
-using Surface = struct wl_surface *;
 using WindowManagerSurface = struct xdg_surface *;
 using Window = struct xdg_toplevel *;
 
@@ -33,6 +33,7 @@ bool quit = false;
 
 //! all null to nullptr
 
+int32_t width = 0, height = 0;
 int32_t new_width = 0, new_height = 0;
 
 static void PingBack(void *data, WindowManager passed_wm, uint32_t serial)
@@ -158,4 +159,32 @@ namespace Iridium::Windowing::Wayland
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
     }
+
+    Display GetDisplay() { return display; }
+    Surface GetSurface() { return surface; }
+    bool ShouldWindowClose() { return quit; }
+
+    void ResizeWindow()
+    {
+        if (ready_to_resize && resize)
+        {
+            width = new_width;
+            height = new_height;
+
+            Vulkan::WaitForIdle();
+
+            Vulkan::EndSwapchain();
+            Vulkan::StartSwapchain(width, height);
+
+            ready_to_resize = false;
+            resize = false;
+            wl_surface_commit(surface);
+        }
+    }
+
+    void Sync() { wl_display_roundtrip(display); }
+
+    uint32_t GetWidth() { return width; }
+
+    uint32_t GetHeight() { return height; }
 }
