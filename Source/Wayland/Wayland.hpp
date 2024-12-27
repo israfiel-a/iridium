@@ -13,6 +13,53 @@ using Surface = struct wl_surface *;
 namespace Iridium::Windowing::Wayland
 {
     /**
+     * @brief Information about a monitor object. This includes all
+     * information pertaining to rendering on a given monitor.
+     */
+    struct Monitor
+    {
+        public:
+            /**
+             * @brief The width of the monitor in pixels.
+             */
+            uint32_t width;
+            /**
+             * @brief The height of the monitor in pixels.
+             */
+            uint32_t height;
+            /**
+             * @brief The X-coordinate of the top left corner of the
+             * monitor in screenspace. This is relevant because sometimes
+             * monitors are offset by certain things like OS decoration.
+             */
+            uint32_t x;
+            /**
+             * @brief The Y-coordinate of the top left corner of the
+             * monitor in screenspace. This is relevant because sometimes
+             * monitors are offset by certain things like OS decoration.
+             */
+            uint32_t y;
+            /**
+             * @brief The refresh rate of the monitor in mHz.
+             */
+            uint16_t refresh_rate;
+            /**
+             * @brief The content scale of the monitor.
+             */
+            int16_t scale;
+    };
+
+    /**
+     * @brief Convert millihertz (mHz) to megahertz (MHz).
+     * @param mHz Millihertz to convert.
+     * @return The megahertz representation of the passed value.
+     */
+    constexpr std::uint32_t mHzToMHz(std::uint32_t mHz) noexcept
+    {
+        return static_cast<std::uint32_t>(mHz / 1000000000);
+    }
+
+    /**
      * @brief Connect the Wayland server to our program. This blocks to
      * allow registry objects to connect.
      * @return true Connection was successful.
@@ -34,6 +81,8 @@ namespace Iridium::Windowing::Wayland
 
     uint32_t GetWidth();
     uint32_t GetHeight();
+
+    const Monitor &GetMonitor() noexcept;
 }
 
 #endif // IRIDIUM_WAYLAND_HPP

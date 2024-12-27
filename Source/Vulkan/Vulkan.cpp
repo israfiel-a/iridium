@@ -1,4 +1,5 @@
 #include "Vulkan.hpp"
+#include "../Wayland/Wayland.hpp"
 #include <Logging.hpp>
 
 #include <vulkan/vulkan.hpp>
@@ -316,6 +317,8 @@ namespace Iridium::Vulkan
         vkCreateCommandPool(gpu_logical_device, &command_pool_create_info,
                             NULL, &command_pool);
 
+        StartSwapchain();
+
         return true;
     }
 
@@ -329,7 +332,7 @@ namespace Iridium::Vulkan
         vkDestroyInstance(instance, nullptr);
     }
 
-    void StartSwapchain(std::uint32_t width, std::uint32_t height)
+    void StartSwapchain()
     {
         VkSurfaceCapabilitiesKHR capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(gpu_device, surface,
@@ -360,14 +363,17 @@ namespace Iridium::Vulkan
                 ? capabilities.minImageCount + 1
                 : capabilities.minImageCount;
 
+        const Windowing::Wayland::Monitor &monitor =
+            Windowing::Wayland::GetMonitor();
+
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.surface = surface;
         createInfo.minImageCount = image_count;
         createInfo.imageFormat = chosenFormat.format;
         createInfo.imageColorSpace = chosenFormat.colorSpace;
-        createInfo.imageExtent.width = width;
-        createInfo.imageExtent.height = height;
+        createInfo.imageExtent.width = monitor.width;
+        createInfo.imageExtent.height = monitor.height;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -458,8 +464,8 @@ namespace Iridium::Vulkan
             framebuffer_create_info.renderPass = renderpass;
             framebuffer_create_info.attachmentCount = 1;
             framebuffer_create_info.pAttachments = &elements[i].imageView;
-            framebuffer_create_info.width = width;
-            framebuffer_create_info.height = height;
+            framebuffer_create_info.width = monitor.width;
+            framebuffer_create_info.height = monitor.height;
             framebuffer_create_info.layers = 1;
 
             vkCreateFramebuffer(gpu_logical_device,
@@ -518,7 +524,7 @@ namespace Iridium::Vulkan
 
     void WaitForIdle() { vkDeviceWaitIdle(gpu_logical_device); }
 
-    void Frame(std::uint32_t width, std::uint32_t height)
+    void Frame()
     {
         struct SwapchainElement *currentElement = &elements[current_frame];
 
@@ -533,7 +539,7 @@ namespace Iridium::Vulkan
         {
             vkDeviceWaitIdle(gpu_logical_device);
             EndSwapchain();
-            StartSwapchain(width, height);
+            StartSwapchain();
             return;
         }
         // else if (result < 0) { CHECK_VK_RESULT(result); }
@@ -556,7 +562,11 @@ namespace Iridium::Vulkan
 
         vkBeginCommandBuffer(element->commandBuffer, &beginInfo);
 
+        //! BACKGROUND COLOR!!!!
         VkClearValue clearValue = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
+
+        const Windowing::Wayland::Monitor &monitor =
+            Windowing::Wayland::GetMonitor();
 
         VkRenderPassBeginInfo renderpass_info = {};
         renderpass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -564,8 +574,8 @@ namespace Iridium::Vulkan
         renderpass_info.framebuffer = element->framebuffer;
         renderpass_info.renderArea.offset.x = 0;
         renderpass_info.renderArea.offset.y = 0;
-        renderpass_info.renderArea.extent.width = width;
-        renderpass_info.renderArea.extent.height = height;
+        renderpass_info.renderArea.extent.width = monitor.width;
+        renderpass_info.renderArea.extent.height = monitor.height;
         renderpass_info.clearValueCount = 1;
         renderpass_info.pClearValues = &clearValue;
 
@@ -604,7 +614,7 @@ namespace Iridium::Vulkan
         {
             vkDeviceWaitIdle(gpu_logical_device);
             EndSwapchain();
-            StartSwapchain(width, height);
+            StartSwapchain();
         }
         // else if (result < 0) { CHECK_VK_RESULT(result); }
 

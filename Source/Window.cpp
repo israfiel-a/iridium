@@ -8,12 +8,11 @@ namespace Iridium::Windowing
     {
         Wayland::Connect();
         Vulkan::Connect(Wayland::GetDisplay(), Wayland::GetSurface());
-        Vulkan::StartSwapchain(500, 500);
 
         while (!Wayland::ShouldWindowClose())
         {
             Wayland::ResizeWindow();
-            Vulkan::Frame(Wayland::GetWidth(), Wayland::GetHeight());
+            Vulkan::Frame();
             Wayland::Sync();
         }
     }
