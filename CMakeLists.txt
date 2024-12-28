@@ -29,7 +29,8 @@ include_directories(${IRIDIUM_INCLUDE_DIR})
 
 # Note down all the files this project contains.
 set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Version.hpp" "${IRIDIUM_INCLUDE_DIR}/Files.hpp" 
-    "${IRIDIUM_INCLUDE_DIR}/Window.hpp" "${IRIDIUM_INCLUDE_DIR}/Logging.hpp")
+    "${IRIDIUM_INCLUDE_DIR}/Window.hpp" "${IRIDIUM_INCLUDE_DIR}/Logging.hpp"
+    "${IRIDIUM_INCLUDE_DIR}/Types.hpp")
 set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Version.cpp" "${IRIDIUM_SOURCE_DIR}/Files.cpp"
     "${IRIDIUM_SOURCE_DIR}/Window.cpp" "${IRIDIUM_SOURCE_DIR}/Wayland/Wayland.cpp"
     "${IRIDIUM_SOURCE_DIR}/Logging.cpp" "${IRIDIUM_SOURCE_DIR}/Wayland/_xsh.c"

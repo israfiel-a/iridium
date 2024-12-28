@@ -7,11 +7,11 @@ namespace Iridium::Windowing
     Window::Window(const std::string &name)
     {
         Wayland::Connect();
-        Vulkan::Connect(Wayland::GetDisplay(), Wayland::GetSurface());
+        Wayland::SetWindowTitle(name);
+        Vulkan::Connect();
 
         while (!Wayland::ShouldWindowClose())
         {
-            Wayland::ResizeWindow();
             Vulkan::Frame();
             Wayland::Sync();
         }

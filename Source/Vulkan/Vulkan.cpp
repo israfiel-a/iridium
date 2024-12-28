@@ -45,7 +45,7 @@ const char *const names[] = {"VK_EXT_debug_utils", "VK_KHR_surface",
                              "VK_KHR_wayland_surface"};
 const char *const dnames[] = {"VK_KHR_swapchain"};
 
-const char *const vnames[] = {"VK_LAYER_KHRONOS_validation"};
+// const char *const vnames[] = {"VK_LAYER_KHRONOS_validation"};
 
 //! settings to add/remove vk validation layers at compile time
 //! check queue families properly
@@ -72,52 +72,52 @@ ScoreType RateGPU(GPU device)
 #define GET_EXTENSION_FUNCTION(_id)                                       \
     ((PFN_##_id)(vkGetInstanceProcAddr(instance, #_id)))
 
-static VkBool32
-onError(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-        VkDebugUtilsMessageTypeFlagsEXT type,
-        const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
-        void *userData)
-{
-    printf("Vulkan ");
+// static VkBool32
+// onError(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+//         VkDebugUtilsMessageTypeFlagsEXT type,
+//         const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
+//         void *userData)
+// {
+//     printf("Vulkan ");
 
-    switch (type)
-    {
-        case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
-            printf("general ");
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
-            printf("validation ");
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
-            printf("performance ");
-            break;
-    }
+//     switch (type)
+//     {
+//         case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+//             printf("general ");
+//             break;
+//         case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+//             printf("validation ");
+//             break;
+//         case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+//             printf("performance ");
+//             break;
+//     }
 
-    switch (severity)
-    {
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-            printf("(verbose): ");
-            break;
-        default:
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            printf("(info): ");
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            printf("(warning): ");
-            break;
-        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            printf("(error): ");
-            break;
-    }
+//     switch (severity)
+//     {
+//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+//             printf("(verbose): ");
+//             break;
+//         default:
+//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+//             printf("(info): ");
+//             break;
+//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+//             printf("(warning): ");
+//             break;
+//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+//             printf("(error): ");
+//             break;
+//     }
 
-    printf("%s\n", callbackData->pMessage);
+//     printf("%s\n", callbackData->pMessage);
 
-    return 0;
-}
+//     return 0;
+// }
 
 namespace Iridium::Vulkan
 {
-    bool Connect(wl_display *display, wl_surface *passed_surface)
+    bool Connect()
     {
         VkApplicationInfo info;
         info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -134,7 +134,7 @@ namespace Iridium::Vulkan
         instance_info.enabledExtensionCount = 3;
         instance_info.ppEnabledExtensionNames = names;
         instance_info.enabledLayerCount = 0;
-        instance_info.ppEnabledLayerNames = vnames;
+        // instance_info.ppEnabledLayerNames = vnames;
 
         VkResult result =
             vkCreateInstance(&instance_info, nullptr, &instance);
@@ -164,27 +164,27 @@ namespace Iridium::Vulkan
         for (const auto &layer : availableLayers)
             Logging::Log((std::string) "VVLF: " + layer.layerName);
 
-        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-        createInfo.sType =
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType =
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = onError;
+        // VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        // createInfo.sType =
+        //     VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        // createInfo.messageSeverity =
+        //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+        //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        // createInfo.messageType =
+        //     VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+        //     VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+        //     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        // createInfo.pfnUserCallback = onError;
 
-        GET_EXTENSION_FUNCTION(vkCreateDebugUtilsMessengerEXT)
-        (instance, &createInfo, NULL, &debugMessenger);
+        // GET_EXTENSION_FUNCTION(vkCreateDebugUtilsMessengerEXT)
+        // (instance, &createInfo, NULL, &debugMessenger);
 
         VkWaylandSurfaceCreateInfoKHR wayland_create_info = {};
         wayland_create_info.sType =
             VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
-        wayland_create_info.display = display;
-        wayland_create_info.surface = passed_surface;
+        wayland_create_info.display = Windowing::Wayland::GetDisplay();
+        wayland_create_info.surface = Windowing::Wayland::GetSurface();
         vkCreateWaylandSurfaceKHR(instance, &wayland_create_info, NULL,
                                   &surface);
 

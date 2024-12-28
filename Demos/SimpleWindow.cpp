@@ -1,3 +1,3 @@
 #include <Window.hpp>
 
-int main() { Iridium::Windowing::Window window("test"); }
+int main() { Iridium::Windowing::Window window("Simple Window"); }
