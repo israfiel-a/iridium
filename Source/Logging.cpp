@@ -47,7 +47,10 @@ const static std::map<ErrorCode, ErrorInfo> error_information = {
                    ErrorInfo("destination_too_small", warning)),
     std::make_pair(file_open_failed, ErrorInfo("file_open_failed", error)),
     std::make_pair(wayland_connection_failed,
-                   ErrorInfo("wayland_connection_failed", error))};
+                   ErrorInfo("wayland_connection_failed", error)),
+    std::make_pair(double_init, ErrorInfo("double_init", warning)),
+    std::make_pair(enumeration_failure,
+                   ErrorInfo("enumeration_failure", error))};
 
 /**
  * @brief The application's error stack. This contains up to 10 of the most
@@ -129,8 +132,7 @@ namespace Iridium::Logging
                        const Location &location)
         : body(FormatLoggable(severity, location) + body_string),
           severity(severity)
-    {
-    }
+    {}
 
     Error::Error(ErrorCode code, Severity severity_value, Context context,
                  const Location &location)

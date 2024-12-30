@@ -1,5 +1,5 @@
 #include "Vulkan.hpp"
-#include "../Wayland/Wayland.hpp"
+#include "./Wayland.hpp"
 #include <Logging.hpp>
 
 #include <vulkan/vulkan.hpp>
@@ -10,8 +10,8 @@ using GPUProperties = VkPhysicalDeviceProperties;
 using GPUFeatures = VkPhysicalDeviceFeatures;
 using ScoreType = std::uint8_t;
 
-VkInstance instance = nullptr;
-VkPhysicalDevice gpu_device = nullptr;
+static vk::Instance instance;
+VkPhysicalDevice gpu_device;
 VkDevice gpu_logical_device;
 
 VkCommandPool command_pool;
@@ -41,11 +41,14 @@ struct SwapchainElement
 };
 struct SwapchainElement *elements = NULL;
 
-const char *const names[] = {"VK_EXT_debug_utils", "VK_KHR_surface",
-                             "VK_KHR_wayland_surface"};
-const char *const dnames[] = {"VK_KHR_swapchain"};
+static constexpr std::array<const char *, 3> required_extensions = {
+    vk::EXTDebugUtilsExtensionName, vk::KHRSurfaceExtensionName,
+    VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME};
 
-// const char *const vnames[] = {"VK_LAYER_KHRONOS_validation"};
+static constexpr std::array<const char *, 1> required_layers = {
+    "VK_LAYER_KHRONOS_validation"};
+
+const char *const dnames[] = {"VK_KHR_swapchain"};
 
 //! settings to add/remove vk validation layers at compile time
 //! check queue families properly
@@ -72,113 +75,180 @@ ScoreType RateGPU(GPU device)
 #define GET_EXTENSION_FUNCTION(_id)                                       \
     ((PFN_##_id)(vkGetInstanceProcAddr(instance, #_id)))
 
-// static VkBool32
-// onError(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-//         VkDebugUtilsMessageTypeFlagsEXT type,
-//         const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
-//         void *userData)
-// {
-//     printf("Vulkan ");
+static VkBool32
+onError(VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+        VkDebugUtilsMessageTypeFlagsEXT type,
+        const VkDebugUtilsMessengerCallbackDataEXT *callbackData,
+        void *userData)
+{
+    printf("Vulkan ");
 
-//     switch (type)
-//     {
-//         case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
-//             printf("general ");
-//             break;
-//         case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
-//             printf("validation ");
-//             break;
-//         case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
-//             printf("performance ");
-//             break;
-//     }
+    switch (type)
+    {
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+            printf("general ");
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+            printf("validation ");
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+            printf("performance ");
+            break;
+    }
 
-//     switch (severity)
-//     {
-//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-//             printf("(verbose): ");
-//             break;
-//         default:
-//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-//             printf("(info): ");
-//             break;
-//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-//             printf("(warning): ");
-//             break;
-//         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-//             printf("(error): ");
-//             break;
-//     }
+    switch (severity)
+    {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            printf("(verbose): ");
+            break;
+        default:
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            printf("(info): ");
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            printf("(warning): ");
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            printf("(error): ");
+            break;
+    }
 
-//     printf("%s\n", callbackData->pMessage);
+    printf("%s\n", callbackData->pMessage);
 
-//     return 0;
-// }
+    return 0;
+}
 
 namespace Iridium::Vulkan
 {
-    bool Connect()
+    bool Connect(const std::string &application_name)
     {
-        VkApplicationInfo info;
-        info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        info.pApplicationName = "SimpleWindow";
-        info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        info.pEngineName = "Iridium";
-        info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        info.apiVersion = VK_API_VERSION_1_0;
+        if (instance != nullptr)
+        {
+            Logging::RaiseError(Logging::double_init);
+            return false;
+        }
 
-        VkInstanceCreateInfo instance_info{};
-        instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        instance_info.pApplicationInfo = &info;
+        vk::ApplicationInfo application_info(
+            "application_name.c_str()", VK_MAKE_VERSION(1, 0, 0),
+            "Iridium", VK_MAKE_VERSION(1, 0, 0), VK_API_VERSION_1_4);
+        vk::InstanceCreateInfo instance_info(
+            {}, &application_info, required_layers.size(),
+            required_layers.data(), required_extensions.size(),
+            required_extensions.data());
 
-        instance_info.enabledExtensionCount = 3;
-        instance_info.ppEnabledExtensionNames = names;
-        instance_info.enabledLayerCount = 0;
-        // instance_info.ppEnabledLayerNames = vnames;
+        std::uint32_t extension_count = 0;
+        vk::Result failure = vk::enumerateInstanceExtensionProperties(
+            nullptr, &extension_count, nullptr);
+        if (failure != vk::Result::eSuccess)
+        {
+            Logging::RaiseError(
+                Logging::enumeration_failure, Logging::infer,
+                "Failed to enumerate Vulkan extensions. Code: " +
+                    std::to_string((std::uint64_t)failure));
+            return false;
+        }
 
-        VkResult result =
-            vkCreateInstance(&instance_info, nullptr, &instance);
-        if (result != VK_SUCCESS) exit(255);
+        std::vector<vk::ExtensionProperties> found_extensions(
+            extension_count);
+        failure = vk::enumerateInstanceExtensionProperties(
+            nullptr, &extension_count, found_extensions.data());
+        if (failure != vk::Result::eSuccess)
+        {
+            Logging::RaiseError(
+                Logging::enumeration_failure, Logging::infer,
+                "Failed to enumerate Vulkan extensions. Code: " +
+                    std::to_string((std::uint64_t)failure));
+            return false;
+        }
 
-        //! check for needed extensions / layers!!!
+        std::uint32_t found_required_extensions = 0;
+        for (const auto &extension : found_extensions)
+        {
+            for (std::size_t i = 0; i < required_extensions.size(); i++)
+                if (strcmp(extension.extensionName.data(),
+                           required_extensions[i]) == 0)
+                {
+                    Logging::Log("Got extension " +
+                                     (std::string)extension.extensionName +
+                                     ".",
+                                 Logging::success);
+                    found_required_extensions++;
+                    break;
+                }
+        }
 
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-                                               nullptr);
-        std::vector<VkExtensionProperties> extensions(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-                                               extensions.data());
+        if (found_required_extensions < required_extensions.size())
+        {
+            Logging::RaiseError(
+                Logging::failed_null_assertion, Logging::infer,
+                "Failed to find required Vulkan extensions.");
+            return false;
+        }
 
-        // "Vulkan extension found"
-        for (const auto &extension : extensions)
-            Logging::Log((std::string) "VKEF: " + extension.extensionName);
+        std::uint32_t layer_count = 0;
+        failure =
+            vk::enumerateInstanceLayerProperties(&layer_count, nullptr);
+        if (failure != vk::Result::eSuccess)
+        {
+            Logging::RaiseError(
+                Logging::enumeration_failure, Logging::infer,
+                "Failed to enumerate Vulkan layers. Code: " +
+                    std::to_string((std::uint64_t)failure));
+            return false;
+        }
 
-        uint32_t layerCount;
-        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::vector<vk::LayerProperties> found_layers(layer_count);
+        failure = vk::enumerateInstanceLayerProperties(
+            &layer_count, found_layers.data());
+        if (failure != vk::Result::eSuccess)
+        {
+            Logging::RaiseError(
+                Logging::enumeration_failure, Logging::infer,
+                "Failed to enumerate Vulkan layers. Code: " +
+                    std::to_string((std::uint64_t)failure));
+            return false;
+        }
 
-        std::vector<VkLayerProperties> availableLayers(layerCount);
-        vkEnumerateInstanceLayerProperties(&layerCount,
-                                           availableLayers.data());
+        std::uint32_t found_required_layers = 0;
+        for (const auto &layer : found_layers)
+        {
+            for (std::size_t i = 0; i < required_layers.size(); i++)
+                if (strcmp(layer.layerName.data(), required_layers[i]) ==
+                    0)
+                {
+                    Logging::Log("Got layer " +
+                                     (std::string)layer.layerName + ".",
+                                 Logging::success);
+                    found_required_layers++;
+                    break;
+                }
+        }
 
-        // "Vulkan validation layer found"
-        for (const auto &layer : availableLayers)
-            Logging::Log((std::string) "VVLF: " + layer.layerName);
+        if (found_required_layers < required_layers.size())
+        {
+            Logging::RaiseError(Logging::failed_null_assertion,
+                                Logging::infer,
+                                "Failed to find required Vulkan layers.");
+            return false;
+        }
 
-        // VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-        // createInfo.sType =
-        //     VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        // createInfo.messageSeverity =
-        //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-        //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-        //     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        // createInfo.messageType =
-        //     VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-        //     VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-        //     VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        // createInfo.pfnUserCallback = onError;
+        instance = vk::createInstance(instance_info, nullptr);
 
-        // GET_EXTENSION_FUNCTION(vkCreateDebugUtilsMessengerEXT)
-        // (instance, &createInfo, NULL, &debugMessenger);
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        createInfo.sType =
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = onError;
+
+        GET_EXTENSION_FUNCTION(vkCreateDebugUtilsMessengerEXT)
+        (instance, &createInfo, NULL, &debugMessenger);
 
         VkWaylandSurfaceCreateInfoKHR wayland_create_info = {};
         wayland_create_info.sType =

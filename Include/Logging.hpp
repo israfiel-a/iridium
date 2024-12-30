@@ -49,7 +49,16 @@ namespace Iridium::Logging
         /**
          * @brief The engine failed to connect to Wayland.
          */
-        wayland_connection_failed
+        wayland_connection_failed,
+        /**
+         * @brief The engine attempted to initialize something twice.
+         */
+        double_init,
+        /**
+         * @brief The engine failed to enumerate over the properties of
+         * something.
+         */
+        enumeration_failure
     };
 
     /**
@@ -151,8 +160,7 @@ namespace Iridium::Logging
             Loggable(const char *body, Severity severity = log,
                      const Location &location = Location::current())
                 : Loggable(std::string(body), severity, location)
-            {
-            }
+            {}
 
             /**
              * @brief Get the body of the loggable; what's actually going

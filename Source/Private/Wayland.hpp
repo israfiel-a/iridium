@@ -61,6 +61,7 @@ namespace Iridium::Windowing::Wayland
      * @param mHz Millihertz to convert.
      * @return The hertz representation of the passed value.
      */
+    [[nodiscard("Expression result unused.")]]
     inline constexpr Iridium::U16 mHzToHz(Iridium::U32 mHz) noexcept
     {
         return static_cast<Iridium::U16>(mHz / 1000);
@@ -72,6 +73,7 @@ namespace Iridium::Windowing::Wayland
      * @return true Connection was successful.
      * @return false Connection failed. Error reason was logged.
      */
+    [[nodiscard("A failure here may be catastrophic.")]]
     bool Connect();
 
     /**
@@ -89,12 +91,14 @@ namespace Iridium::Windowing::Wayland
      * @brief Get the private Wayland display object.
      * @return The Wayland display object.
      */
+    [[nodiscard("Expression result unused.")]]
     const Display &GetDisplay() noexcept;
 
     /**
      * @brief Get the private Wayland surface object.
      * @return The Wayland surface object.
      */
+    [[nodiscard("Expression result unused.")]]
     const Surface &GetSurface() noexcept;
 
     /**
@@ -102,6 +106,7 @@ namespace Iridium::Windowing::Wayland
      * about the monitor we're rendering on.
      * @return The monitor.
      */
+    [[nodiscard("Expression result unused.")]]
     const Monitor &GetMonitor() noexcept;
 
     /**
@@ -110,6 +115,7 @@ namespace Iridium::Windowing::Wayland
      * @return true The window should close.
      * @return false The window should continue running.
      */
+    [[nodiscard("Expression result unused.")]]
     bool ShouldWindowClose() noexcept;
 
     /**

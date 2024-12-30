@@ -13,7 +13,7 @@
 #include <Logging.hpp>
 
 // This pulls in the Wayland header file as well.
-#include "_xsh.h"
+#include "XDGShell.h"
 
 #include <cstring>
 
@@ -433,6 +433,12 @@ namespace Iridium::Windowing::Wayland
 {
     bool Connect()
     {
+        if (display != nullptr)
+        {
+            Logging::RaiseError(Logging::double_init);
+            return false;
+        }
+
         display = wl_display_connect(0);
         if (display == NULL)
         {
@@ -463,8 +469,11 @@ namespace Iridium::Windowing::Wayland
 
     void Disconnect() noexcept
     {
-        // Destroy XDG in ascending order, starting with the toplevel and
-        // ending with the base interface.
+        // Just silently return.
+        if (display == nullptr) return;
+
+        // Destroy Wayland in ascending order, starting with the toplevel
+        // and ending with the base interface.
         xdg_toplevel_destroy(window);
         xdg_surface_destroy(wrapped_surface);
         wl_surface_destroy(surface);
@@ -473,9 +482,21 @@ namespace Iridium::Windowing::Wayland
         wl_compositor_destroy(compositor);
         wl_registry_destroy(registry);
         wl_display_disconnect(display);
+
+        window = nullptr;
+        wrapped_surface = nullptr;
+        surface = nullptr;
+        window_manager = nullptr;
+
+        compositor = nullptr;
+        registry = nullptr;
+        display = nullptr;
     }
 
-    void Sync() noexcept { wl_display_roundtrip(display); }
+    void Sync() noexcept
+    {
+        if (display != nullptr) wl_display_roundtrip(display);
+    }
 
     const Display &GetDisplay() noexcept { return display; }
 
@@ -489,8 +510,11 @@ namespace Iridium::Windowing::Wayland
 
     void SetWindowTitle(const std::string &title) noexcept
     {
-        xdg_toplevel_set_title(window, title.c_str());
-        xdg_toplevel_set_app_id(window, title.c_str());
+        if (window != nullptr)
+        {
+            xdg_toplevel_set_title(window, title.c_str());
+            xdg_toplevel_set_app_id(window, title.c_str());
+        }
     }
 
     void IgnoreRestrictions(bool fullscreen, bool minimize) noexcept
