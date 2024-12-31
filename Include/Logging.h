@@ -19,11 +19,14 @@ typedef FILE *ir_output_t;
 
 typedef enum ir_severity
 {
-    success,
-    log,
-    warning,
-    error,
-    panic
+    ir_success,
+    ir_log,
+    ir_warning,
+    ir_error,
+    /**
+     * @brief document panic-throwers
+     */
+    ir_panic
 } ir_severity_t;
 
 typedef struct ir_loggable
@@ -38,6 +41,17 @@ void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
              uint32_t line);
 
 #define Ir_Log(object) Ir_Log_(object, FILENAME, __func__, __LINE__)
+
+/**
+ * @name SilenceLogs
+ * @authors Israfil Argos
+ * @brief Silence all logs that aren't warnings, errors, or panics. This is
+ * reccomended for production builds, as it can increase performance
+ * substantially on some systems.
+ *
+ * @param silence The new silence flag. False for off, true for on.
+ */
+void Ir_SilenceLogs(bool silence);
 
 void Ir_SetLogOutput(ir_output_t output);
 

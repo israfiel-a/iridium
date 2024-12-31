@@ -1,4 +1,4 @@
-![iridium_logo](./Modules/iridium.jpg)
+![iridium_logo](./Modules/iridium-top-banner.jpg)
 
 
 ---
@@ -33,3 +33,5 @@ Contributions to the engine must follow our [contribution guidelines](./CONTRIBU
 - [Don't be a dick.](./CONTRIBUTING.md#community-interaction)
 
 Beyond those golden rules, help out where you can, add new functionality where it's needed, and generally have fun. Well, as much fun as you can have in C.
+
+![iridium_logo](./Modules/iridium-bottom-banner.jpg)

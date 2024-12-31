@@ -1,13 +1,24 @@
+#include <Errors.h>
 #include <Iridium.h>
-#include <Logging.h>
 
 int main(void)
 {
-    ir_loggable_t log_object = {.severity = success,
-                                .title = "Log Test",
-                                .description = "logloglog",
-                                .context = "hello context"};
-    Ir_Log(&log_object);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_warning,
+                     "hello world");
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer,
+                     NULL);
 
     return 0;
 }

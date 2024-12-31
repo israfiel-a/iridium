@@ -27,6 +27,7 @@ Table of contents:
         - Global variables are in `ir_snake_case`
     - Macros are in `UPPER_CASE`
     - Types are in `ir_snake_case_t`.
+        - Enum values are in `ir_snake_case`
     - Functions are in `Ir_PascalCase`.
         - Static/private functions are in `PascalCase`
     - File names are in `PascalCase`.

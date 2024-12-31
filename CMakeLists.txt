@@ -44,10 +44,10 @@ set(IRIDIUM_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Include")
 set(IRIDIUM_DEMO_DIR "${CMAKE_SOURCE_DIR}/Demos")
 include_directories("${IRIDIUM_INCLUDE_DIR}")
 
-set(IRIDIUM_HEADER_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.h"
-    "${IRIDIUM_SOURCE_DIR}/Logging.h")
+set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Iridium.h"
+    "${IRIDIUM_INCLUDE_DIR}/Logging.h" "${IRIDIUM_INCLUDE_DIR}/Errors.h")
 set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.c" 
-    "${IRIDIUM_SOURCE_DIR}/Logging.c")
+    "${IRIDIUM_SOURCE_DIR}/Logging.c" "${IRIDIUM_SOURCE_DIR}/Errors.c")
 if(LINUX)
     set(IRIDIUM_SOURCE_FILES ${IRIDIUM_SOURCE_FILES} 
         "${IRIDIUM_SOURCE_DIR}/Internal/Wayland.c" 
@@ -58,18 +58,17 @@ endif()
 # We use this for logging purposes.
 file(GLOB IRIDIUM_PROJECT_FILES ${IRIDIUM_SOURCE_FILES} ${IRIDIUM_HEADER_FILES})
 foreach(file ${IRIDIUM_PROJECT_FILES})
-    cmake_path(GET file FILENAME FILE_STEM)
-    cmake_path(GET file EXTENSION FILE_EXTENSION)
-    set_source_files_properties(file PROPERTIES COMPILE_DEFINITIONS 
-        FILENAME="${FILE_STEM}${FILE_EXTENSION}")
+    cmake_path(GET file FILENAME FILE_NAME)
+    set_source_files_properties(${file} PROPERTIES COMPILE_DEFINITIONS 
+        -DFILENAME="${FILE_NAME}")
 endforeach()
 
 if(BUILD_SHARED_LIBS)
-    add_library(Iridium SHARED ${IRIDIUM_SOURCE_FILES})
+    add_library(Iridium SHARED ${IRIDIUM_PROJECT_FILES})
     set_target_properties(Iridium PROPERTIES VERSION ${PROJECT_VERSION})
     set_target_properties(Iridium PROPERTIES SOVERSION ${PROJECT_VERSION_MAJOR})
 else()
-    add_library(Iridium STATIC ${IRIDIUM_SOURCE_FILES})
+    add_library(Iridium STATIC ${IRIDIUM_PROJECT_FILES})
 endif()
 
 target_link_libraries(Iridium PRIVATE Vulkan::Vulkan Threads::Threads)
