@@ -14,16 +14,20 @@
 #include <Logging.h>
 
 /**
- * @name error_code
+ * @name problem_code
  * @brief An error code. This corresponds to a predetermined severity (see
  * ir_severity_t) and short string explanation.
  */
-typedef enum ir_error_code
+typedef enum ir_problem_code
 {
     /**
      * @brief No error reported.
      */
     ir_no_error,
+    /**
+     * @brief An allocation failed. This is a panic.
+     */
+    ir_failed_allocation,
     /**
      * @brief A provided parameter was unexpected in the function context.
      * This is a warning.
@@ -44,15 +48,72 @@ typedef enum ir_error_code
      * (outlined in Wayland.h). This a panic.
      */
     ir_failed_wayland_components
-} ir_error_code_t;
+} ir_problem_code_t;
 
+/**
+ * @name severity_override
+ * @brief An override for the default severity given to each problem code.
+ */
 typedef enum ir_severity_override
 {
+    /**
+     * @brief Use the default severity.
+     */
     ir_override_infer,
+    /**
+     * @brief Override the severity to be a warning.
+     */
     ir_override_warning,
+    /**
+     * @brief Override the severity to be an error.
+     */
     ir_override_error,
+    /**
+     * @brief Override the severity to be a panic.
+     */
     ir_override_panic,
 } ir_severity_override_t;
+
+/**
+ * @name fatality_override
+ * @brief An enum representing the various stages of problem fatality
+ * possible.
+ */
+typedef enum ir_fatality_override
+{
+    /**
+     * @brief Only panics are fatal. This is the default.
+     */
+    ir_just_panic,
+    /**
+     * @brief Both panics and regular errors are fatal.
+     */
+    ir_include_errors,
+    /**
+     * @brief All problems, warnings, included, are fatal.
+     */
+    ir_all_problems
+} ir_fatality_override_t;
+
+/**
+ * @name problem
+ * @brief A problem structure.
+ */
+typedef struct ir_problem
+{
+    /**
+     * @brief The problem's code.
+     */
+    ir_problem_code_t code;
+    /**
+     * @brief The problems's severity.
+     */
+    ir_severity_t severity;
+    /**
+     * @brief Any other context to do with the problem.
+     */
+    const char *context;
+} ir_problem_t;
 
 /**
  * @name SilenceWarnings
@@ -78,13 +139,24 @@ void Ir_SilenceErrors(bool silence);
 /**
  * @name SilenceProblems
  * @authors Israfil Argos
- * @brief Generally silence the logging of errors. This is severly
+ * @brief Generally silence the logging of problems. This is severly
  * discouraged, as it can confuse users running into problems. Note that
  * this does nothing for engine panics.
  *
  * @param silence The new silence flag. False for off, true for on.
  */
 void Ir_SilenceProblems(bool silence);
+
+/**
+ * @name SetProblemFatality
+ * @authors Israfil Argos
+ * @brief Set the level of fatality the program is in. It is reccomended to
+ * turn this to ir_all_problems. Note that this can be overridden itself by
+ * the CatchProblems function, in which case only panics will be fatal.
+ *
+ * @param fatality The new fatality override.
+ */
+void Ir_SetProblemFatality(ir_fatality_override_t fatality);
 
 /**
  * @name SetMaxProblems
@@ -98,12 +170,50 @@ void Ir_SilenceProblems(bool silence);
 void Ir_SetMaxProblems(size_t max);
 
 /**
+ * @name GetProblem
+ * @authors Israfil Argos
+ * @brief Get a problem from the problem stack at the given index.
+ *
+ * @warning Should the index be out of bounds, an ir_unexpected_param
+ * warning will be thrown.
+ *
+ * @param index The index to get the problem from. A value of -1 (SIZE_MAX)
+ * will grab the last problem reported.
+ * @return The problem at the given index, or nullptr if an error occurred.
+ */
+[[nodiscard("Expression result unused.")]]
+const ir_problem_t *Ir_GetProblem(size_t index);
+
+/**
+ * @name PullProblem
+ * @authors Israfil Argos
+ * @brief Pull a problem off the stack at the given index.
+ *
+ * @warning Should the index be out of bounds, an ir_unexpected_param
+ * warning will be thrown.
+ *
+ * @param index The index to get the problem from. A value of -1 (SIZE_MAX)
+ * will grab the last problem reported.
+ * @param problem A storage object for the problem, or NULL/nullptr if you
+ * do not wish to store the pulled problem.
+ * @return A boolean representing the success of the operation.
+ */
+bool Ir_PullProblem(size_t index, ir_problem_t *problem);
+
+/**
+ * @name ClearProblemStack
+ * @authors Israfil Argos
+ * @brief Clear the problem stack entirely from memory.
+ */
+void Ir_ClearProblemStack(void);
+
+/**
  * @name CatchProblems
  * @authors Israfil Argos
- * @brief Don't log any errors reported within the specified function, just
- * push them to the error stack. This is provided to allow for error
+ * @brief Don't log any problems reported within the specified function,
+ * just push them to the error stack. This is provided to allow for error
  * handling within nested functions. This functionality is ended via the
- * ReleaseProblems function. If all errors are set to be fatal, this
+ * ReleaseProblems function. If all problems are set to be fatal, this
  * function will suspend fatality for any errors except for panics.
  * @note This function does not overwrite any previous calls to itself, the
  * function name is pushed to an array.
@@ -113,6 +223,7 @@ void Ir_SetMaxProblems(size_t max);
  * any function that "catches" another function should specify the name of
  * that function in its documentation to prevent doubling.
  */
+[[gnu::nonnull(1)]]
 void Ir_CatchProblems(const char *function_name);
 
 /**
@@ -130,8 +241,37 @@ void Ir_CatchProblems(const char *function_name);
  */
 bool Ir_ReleaseProblems(const char *function_name);
 
-void Ir_ReportProblem(ir_error_code_t code,
-                      ir_severity_override_t override,
-                      const char *context);
+/**
+ * @name ReportProblem_
+ * @brief Report that a problem occurred.
+ *
+ * @param code The code of the problem.
+ * @param override An override for the code's default severity. If you do
+ * not want to to override, set this to ir_override_infer.
+ * @param context Any extra context for the problem. This can be NULL.
+ * @param filename The name of the file from which the problem was sent.
+ * This is defined during the build process as the file's basename + its
+ * extension.
+ * @param function The name of the function from which the problem was
+ * sent.
+ * @param line The line from which the problem was sent.
+ */
+void Ir_ReportProblem_(ir_problem_code_t code,
+                       ir_severity_override_t override,
+                       const char *context, const char *filename,
+                       const char *function, uint32_t line);
+
+/**
+ * @name ReportProblem
+ * @brief Report that a problem occurred.
+ *
+ * @param code The code of the problem.
+ * @param override An override for the code's default severity. If you do
+ * not want to to override, set this to ir_override_infer.
+ * @param context Any extra context for the problem. This can be NULL.
+ */
+#define Ir_ReportProblem(code, override, context)                         \
+    Ir_ReportProblem_(code, override, context, FILENAME, __func__,        \
+                      __LINE__)
 
 #endif // IRIDIUM_ERRORS_H

@@ -3,24 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct ir_error
-{
-    ir_error_code_t code;
-    ir_severity_t severity;
-    const char *context;
-} ir_error_t;
-
 static bool warnings_silenced = false;
 static bool errors_silenced = false;
+static ir_fatality_override_t fatality_level = ir_just_panic;
 
 //! rollover is intentional
 static size_t max_reported_errors = (size_t)-1;
 
 static size_t reported_error_count = 0;
-static ir_error_t *reported_errors = nullptr;
+static ir_problem_t *reported_errors = nullptr;
 
 static const ir_severity_t severities[] = {
     [ir_no_error] = ir_success, // paradoxical lol
+    [ir_failed_allocation] = ir_panic,
     [ir_unexpected_param] = ir_warning,
     [ir_failed_wayland_connection] = ir_panic,
     [ir_failed_wayland_registry] = ir_panic,
@@ -29,7 +24,7 @@ static const ir_severity_t severities[] = {
 static size_t silenced_function_count = 0;
 static const char **silenced_functions = nullptr;
 
-static ir_severity_t GetSeverity(ir_error_code_t code,
+static ir_severity_t GetSeverity(ir_problem_code_t code,
                                  ir_severity_override_t override)
 {
     switch (override)
@@ -42,22 +37,51 @@ static ir_severity_t GetSeverity(ir_error_code_t code,
     return severities[code];
 }
 
-static bool ShouldLog(ir_severity_t severity)
+static bool ShouldLog(const char *function, ir_severity_t severity)
 {
-    switch (severity)
-    {
-        case ir_warning: return !warnings_silenced;
-        case ir_error:   return !errors_silenced;
-        default:         return true;
-    }
+    if (severity == ir_panic) return true;
+
+    bool function_silenced = false;
+    for (size_t i = 0; i < silenced_function_count; i++)
+        if (strcmp(function, silenced_functions[i]) == 0)
+        {
+            function_silenced = true;
+            break;
+        }
+    if (function_silenced) return false;
+
+    if (severity == ir_warning) return !warnings_silenced;
+    if (severity == ir_error) return !errors_silenced;
+    return false;
 }
 
-static const char *GetCodeString(ir_error_code_t code)
+static bool GetFatality(const char *function, ir_severity_t severity)
+{
+    if (severity == ir_panic) return true;
+    if (fatality_level == ir_just_panic) return false;
+
+    // Make sure the function isn't silenced.
+    bool function_silenced = false;
+    for (size_t i = 0; i < silenced_function_count; i++)
+        if (strcmp(function, silenced_functions[i]) == 0)
+        {
+            function_silenced = true;
+            break;
+        }
+    if (function_silenced) return false;
+
+    if (fatality_level != ir_all_problems && severity == ir_warning)
+        return false;
+    return true;
+}
+
+static const char *GetCodeString(ir_problem_code_t code)
 {
     switch (code)
     {
-        case ir_no_error:         return "ir_no_error";
-        case ir_unexpected_param: return "ir_unexpected_param";
+        case ir_no_error:          return "ir_no_error";
+        case ir_failed_allocation: return "ir_failed_allocation";
+        case ir_unexpected_param:  return "ir_unexpected_param";
         case ir_failed_wayland_connection:
             return "ir_failed_wayland_connection";
         case ir_failed_wayland_registry:
@@ -78,24 +102,77 @@ void Ir_SilenceProblems(bool silence)
     errors_silenced = silence;
 }
 
+void Ir_SetProblemFatality(ir_fatality_override_t fatality)
+{
+    fatality_level = fatality;
+}
+
 void Ir_SetMaxProblems(size_t max)
 {
     if (max == 0) max = (size_t)-1;
     max_reported_errors = max;
 }
 
-void Ir_CatchProblems(const char *function_name)
+const ir_problem_t *Ir_GetProblem(size_t index)
 {
-    if (function_name == NULL || nullptr)
+    if (index == (size_t)-1 && reported_error_count != 0)
+        return &reported_errors[reported_error_count];
+    if (index >= reported_error_count)
     {
         Ir_ReportProblem(ir_unexpected_param, ir_override_infer,
-                         "null function name");
-        return;
+                         "index out of bounds");
+        return nullptr;
     }
 
+    return &reported_errors[index];
+}
+
+bool Ir_PullProblem(size_t index, ir_problem_t *error)
+{
+    if (index == (size_t)-1 && reported_error_count != 0)
+    {
+        if (error != nullptr && error != NULL)
+            *error = reported_errors[reported_error_count];
+
+        reported_errors =
+            realloc(reported_errors,
+                    sizeof(ir_problem_t) * (reported_error_count--));
+        if (reported_errors == NULL)
+            Ir_ReportProblem(ir_failed_allocation, ir_override_infer,
+                             nullptr);
+        return true;
+    }
+    if (index >= reported_error_count)
+    {
+        Ir_ReportProblem(ir_unexpected_param, ir_override_infer,
+                         "index out of bounds");
+        return false;
+    }
+
+    if (error != nullptr && error != NULL) *error = reported_errors[index];
+    for (size_t i = index; i < reported_error_count - 1; i++)
+        reported_errors[i] = reported_errors[i + 1];
+    reported_errors = realloc(
+        reported_errors, sizeof(ir_problem_t) * (reported_error_count--));
+
+    return true;
+}
+
+void Ir_ClearProblemStack(void)
+{
+    reported_error_count = 0;
+    free(reported_errors);
+    reported_errors = nullptr;
+}
+
+void Ir_CatchProblems(const char *function_name)
+{
     silenced_functions =
         realloc(silenced_functions,
                 sizeof(const char *) * (silenced_function_count + 1));
+    if (silenced_functions == NULL)
+        Ir_ReportProblem(ir_failed_allocation, ir_override_infer, nullptr);
+
     silenced_functions[silenced_function_count] = function_name;
     silenced_function_count++;
 }
@@ -127,16 +204,23 @@ bool Ir_ReleaseProblems(const char *function_name)
         silenced_function_count--;
         if (silenced_function_count == 0) Ir_ReleaseProblems(nullptr);
         else
+        {
             silenced_functions =
                 realloc(silenced_functions,
                         sizeof(const char *) * silenced_function_count);
+            if (silenced_functions == NULL)
+                Ir_ReportProblem(ir_failed_allocation, ir_override_infer,
+                                 nullptr);
+        }
     }
 
     return collapse;
 }
 
-void Ir_ReportProblem(ir_error_code_t code,
-                      ir_severity_override_t override, const char *context)
+void Ir_ReportProblem_(ir_problem_code_t code,
+                       ir_severity_override_t override,
+                       const char *context, const char *filename,
+                       const char *function, uint32_t line)
 {
     if (code == ir_no_error)
     {
@@ -145,27 +229,31 @@ void Ir_ReportProblem(ir_error_code_t code,
         return;
     }
 
-    ir_error_t error = {.code = code,
-                        .severity = GetSeverity(code, override),
-                        .context = context};
+    ir_problem_t error = {.code = code,
+                          .severity = GetSeverity(code, override),
+                          .context = context};
 
-    if (ShouldLog(error.severity))
+    if (ShouldLog(function, error.severity))
     {
         ir_loggable_t loggable = {.severity = error.severity,
                                   .title = "Problem Reported",
                                   .description = GetCodeString(code),
                                   .context = context};
-        Ir_Log(&loggable);
+        Ir_Log_(&loggable, filename, function, line);
     }
 
-    // Kill the process should it be given sa panic.
-    if (error.severity == ir_panic) exit(255);
+    // Kill the process should it be given a panic.
+    if (GetFatality(function, error.severity)) exit(255);
 
     if (reported_error_count + 1 <= max_reported_errors)
     {
         reported_errors =
             realloc(reported_errors,
-                    sizeof(ir_error_t) * (reported_error_count + 1));
+                    sizeof(ir_problem_t) * (reported_error_count + 1));
+        if (reported_errors == NULL)
+            Ir_ReportProblem(ir_failed_allocation, ir_override_infer,
+                             nullptr);
+
         reported_errors[reported_error_count] = error;
         reported_error_count++;
     }

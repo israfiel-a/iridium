@@ -10,7 +10,7 @@ if printf '%s\0' "$@" | grep -Fxqz -- '--help'; then
     echo "      --type=[value]:     Specify the type of build to do."
     echo "                          Possible values: Debug, Release"
     echo "      --debugger=[value]: Specify the debugger to use."
-    echo "                          Possible values: Valgrind, GDB"
+    echo "                          Possible values: Valgrind, Valgrind-SR, GDB"
     echo "      --static:           Build the library statically."
     echo "      --no-demo:          Do not build engine demos."
     echo "      --no-docs:          Do not build engine documentation."
@@ -38,6 +38,9 @@ no_sanitize=false
 debugger=None
 if printf '%s\0' "$@" | grep -Fxqz -- '--debugger=Valgrind'; then
     debugger=Valgrind
+    no_sanitize=true
+elif printf '%s\0' "$@" | grep -Fxqz -- '--debugger=Valgrind-SE'; then
+    debugger=Valgrind-SE
     no_sanitize=true
 elif printf '%s\0' "$@" | grep -Fxqz -- '--debugger=GDB'; then
     debugger=GDB
@@ -99,6 +102,9 @@ cd Iridium/Demos
 if [ "$debugger" == "Valgrind" ]; then
     valgrind --tool=memcheck --leak-check=yes --track-origins=yes \
         --trace-children=yes ./SimpleWindow
+elif [ "$debugger" == "Valgrind-SE" ]; then
+    valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
+        --track-origins=yes --trace-children=yes ./SimpleWindow
 elif [ "$debugger" == "GDB" ]; then
     gdb --annotate=3 SimpleWindow
 else
