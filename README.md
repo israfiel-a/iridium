@@ -1,4 +1,8 @@
-## Iridium
+![iridium_logo](./Modules/iridium.jpg)
+
+
+---
+
 Iridium is a 3D game engine built using [C23](https://en.wikipedia.org/wiki/C23_(C_standard_revision)). It is built expressly for performance and stability. Iridium is [open to the community](./LICENSE.md), any/all improvements are welcomed.
 
 ---
