@@ -101,4 +101,6 @@ if [ "$debugger" == "Valgrind" ]; then
         --trace-children=yes ./SimpleWindow
 elif [ "$debugger" == "GDB" ]; then
     gdb --annotate=3 SimpleWindow
+else
+    ./SimpleWindow
 fi

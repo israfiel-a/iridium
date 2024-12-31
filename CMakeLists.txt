@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.31.3 FATAL_ERROR)
 # Version number flubbed until proper system set up.
-project("Iridium" LANGUAGES C VERSION 1.1.0 DESCRIPTION "A 3D game engine written in C23.")
+project("Iridium" LANGUAGES C VERSION 0.1.0 DESCRIPTION "A 3D game engine written in C23.")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Iridium/Demos)
@@ -28,7 +28,9 @@ if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     add_compile_options(-Ofast)
     add_compile_definitions(RELEASE_MODE=true)
 else()
-    add_compile_options(-ggdb3 -fvar-tracking)
+    # Provide several IDEs with code completion and such.
+    set(CMAKE_EXPORT_COMPILE_COMMANDS true)
+    add_compile_options(-ggdb3)
     # Valgrind does not play nice with UBSAN & ASAN.
     if(NOT IRIDIUM_NO_SANITIZE)
         add_compile_options(-fsanitize=address -fsanitize=undefined)
@@ -42,8 +44,25 @@ set(IRIDIUM_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Include")
 set(IRIDIUM_DEMO_DIR "${CMAKE_SOURCE_DIR}/Demos")
 include_directories("${IRIDIUM_INCLUDE_DIR}")
 
-set(IRIDIUM_HEADER_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.h")
-set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.c")
+set(IRIDIUM_HEADER_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.h"
+    "${IRIDIUM_SOURCE_DIR}/Logging.h")
+set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.c" 
+    "${IRIDIUM_SOURCE_DIR}/Logging.c")
+if(LINUX)
+    set(IRIDIUM_SOURCE_FILES ${IRIDIUM_SOURCE_FILES} 
+        "${IRIDIUM_SOURCE_DIR}/Internal/Wayland.c" 
+        "${IRIDIUM_SOURCE_DIR}/Internal/XDGShell.c")
+endif()
+
+# Loop over each source file and add a filename signature to it.
+# We use this for logging purposes.
+file(GLOB IRIDIUM_PROJECT_FILES ${IRIDIUM_SOURCE_FILES} ${IRIDIUM_HEADER_FILES})
+foreach(file ${IRIDIUM_PROJECT_FILES})
+    cmake_path(GET file FILENAME FILE_STEM)
+    cmake_path(GET file EXTENSION FILE_EXTENSION)
+    set_source_files_properties(file PROPERTIES COMPILE_DEFINITIONS 
+        FILENAME="${FILE_STEM}${FILE_EXTENSION}")
+endforeach()
 
 if(BUILD_SHARED_LIBS)
     add_library(Iridium SHARED ${IRIDIUM_SOURCE_FILES})
@@ -55,8 +74,12 @@ endif()
 
 target_link_libraries(Iridium PRIVATE Vulkan::Vulkan Threads::Threads)
 if(LINUX)
+    add_compile_definitions(IRIDIUM_WAYLAND=true)
     target_link_libraries(Iridium PRIVATE Wayland::Wayland)
 endif()
+
+# Copy public API to the build directory.
+file(COPY ${IRIDIUM_INCLUDE_DIR} DESTINATION ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 
 if(IRIDIUM_BUILD_DEMOS)
     # Loop through each C file in the Iridium demo directory and build it
@@ -64,8 +87,12 @@ if(IRIDIUM_BUILD_DEMOS)
     file(GLOB IRIDIUM_DEMO_FILES ${IRIDIUM_DEMO_DIR}/*.c)
     foreach(file ${IRIDIUM_DEMO_FILES})
         cmake_path(GET file STEM DEMO_FILE_STEM)
+        cmake_path(GET file EXTENSION DEMO_FILE_EXTENSION)
         add_executable(${DEMO_FILE_STEM} ${file})
         target_link_libraries(${DEMO_FILE_STEM} Iridium)
         set_target_properties(${DEMO_FILE_STEM} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
+        # Add our nifty little filename maco to each demo file.
+        target_compile_definitions(${DEMO_FILE_STEM} PRIVATE 
+            FILENAME="${DEMO_FILE_STEM}${DEMO_FILE_EXTENSION}")
     endforeach()
 endif()

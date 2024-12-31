@@ -1,6 +1,6 @@
 ---
 BasedOnStyle:  LLVM
-IndentAccessModifiers: true
+IndentAccessModifiers: false
 AccessModifierOffset: 0
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false

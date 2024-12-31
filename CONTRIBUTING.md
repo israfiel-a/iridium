@@ -26,7 +26,7 @@ Table of contents:
     - Variables are in `snake_case`.
         - Global variables are in `ir_snake_case`
     - Macros are in `UPPER_CASE`
-    - Types are in `snake_case_t`.
+    - Types are in `ir_snake_case_t`.
     - Functions are in `Ir_PascalCase`.
         - Static/private functions are in `PascalCase`
     - File names are in `PascalCase`.
@@ -63,6 +63,7 @@ Table of contents:
      * @name [function name (minus "Ir_")]
      * @authors [developer name(s)]
      * @brief [description]
+     * @since [version]
      *
      * @param [param name] - [param description]
      * @returns [return value description]
