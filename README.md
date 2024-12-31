@@ -1,10 +1,31 @@
 ## Iridium
-Iridium is a C++20-based game engine. It is built specifically to fit the needs of the Leto project. This project is under the AGPLv3, meaning you are free to do whatever you wish with it and its source code--with exceptions outlined in [the license](./LICENSE.md).
+Iridium is a 3D game engine built using [C23](https://en.wikipedia.org/wiki/C23_(C_standard_revision)). It is built expressly for performance and stability. Iridium is [open to the community](./LICENSE.md), any/all improvements are welcomed.
+
+---
 
 ### Dependencies
-Iridium is built to be as dependency-light as physically possible. As of right now, the only thing you need is to be running in a supported desktop environment with the C++ standard library installed on your system. However, Iridium requires the [CMake toolchain](https://cmake.org/) to build properly, but pre-compiled binaries do not have that extra caveat.
+Iridium is built to be as light as possible on the dependency side of things. However, we can't reinvent **every** wheel, so the project still requires:
+
+- [libVulkan](https://www.vulkan.org/) (all platforms)
+- [libWayland](https://wayland.freedesktop.org/) (Wayland Linux)
+
+---
 
 ### Compatibility
-Iridium is built from the ground up to rely on as few platform-specific piecees of code as possible. Because of this, it is compatible with a wide range of systems, including [Wayland](https://wayland.freedesktop.org/) Linux and Windows 10 or newer (although Windows 7 is *possible*, it will take some work). However, support for more niche systems is never a bad thing, and I'm fully open to talking about something like [Haiku](https://www.haiku-os.org/).
+While we don't aim to be able to run on traffic controllers, compatibility is still an important aspect of Iridium. However, our time is also not unlimited, so until someone comes along with a use case, not every niche system will be supported. For now, Iridium is restricted to:
 
-> Note: Because it is so early in the development process, the above section is a lie. Iridium only supports Wayland Linux.
+- [Microsoft Windows](https://www.microsoft.com/en-us/windows/): Consistent testing on  Windows 10 and onward. However, 7/8 should be possible with a bit of tinkering.
+- [Linux](https://kernel.org/): Fairly close to any newer-ish version of Linux, so long as you've got a desktop environment installed running Wayland.
+
+[MacOS](https://support.apple.com/mac) is planned, but firmly on the backburner. If there's an entry to this list that you believe would be simple (or at least doable) to implement, open an Issue.
+
+---
+
+### Contributions
+Contributions to the engine must follow our [contribution guidelines](./CONTRIBUTING.md). PRs will **not** be merged unless they meet said standards. To summarize:
+
+- [Document your stuff.](./CONTRIBUTING.md#documentation)
+- [Properly test your stuff.](./CONTRIBUTING.md#testing)
+- [Don't be a dick.](./CONTRIBUTING.md#community-interaction)
+
+Beyond those golden rules, help out where you can, add new functionality where it's needed, and generally have fun. Well, as much fun as you can have in C.
