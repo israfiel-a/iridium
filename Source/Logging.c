@@ -1,4 +1,7 @@
 #include <Logging.h>
+#include <execinfo.h>
+#include <stdlib.h>
+#include <string.h>
 
 static bool silence_logs = false;
 
@@ -49,6 +52,37 @@ static inline const char *GetProperColor(ir_severity_t severity)
     return 0;
 }
 
+//! public maybe?
+static void PrintStacktrace(ir_output_t output, char **trace)
+{
+    //! hard coded length (5)
+
+    for (size_t i = 1; i < 6; i++)
+    {
+        char *current_trace = trace[i];
+
+        size_t last_forward_index = -1;
+        size_t first_parenthesis = -1;
+        size_t last_parenthesis = -1;
+        for (size_t i = 0; i < strlen(current_trace); i++)
+        {
+            char character = current_trace[i];
+            if (character == '/') last_forward_index = i;
+            else if (character == '(' && first_parenthesis == (size_t)-1)
+                first_parenthesis = i;
+            else if (character == ')') last_parenthesis = i;
+        }
+
+        char filename[128] = {0}, symbol[128] = {0};
+        strncpy(filename, current_trace + last_forward_index + 1,
+                first_parenthesis - last_forward_index - 1);
+        strncpy(symbol, current_trace + first_parenthesis + 1,
+                last_parenthesis - first_parenthesis - 1);
+
+        fprintf(output, "\t%s: %s\n", filename, symbol);
+    }
+}
+
 void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
              uint32_t line)
 {
@@ -62,12 +96,23 @@ void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
 
     ir_output_t output = GetProperOutput(object->severity);
     const char *color_code = GetProperColor(object->severity);
-    fprintf(
-        output,
-        "\033[%s%s, ln. %u :: %s():\n%s | %s - %s\n\tContext: %s\n\033[0m",
-        color_code, file, line, function,
-        GetSeverityString(object->severity), object->title,
-        object->description, object->context);
+
+    //! DONT DO THIS SHIT WHEN PANICKING
+    void *buffer[6];
+    int ret = backtrace(buffer, 6);
+    (void)ret; //! check maybe
+    char **trace = backtrace_symbols(buffer, 6);
+
+    fprintf(output,
+            "\n\033[%s%s, ln. %u :: %s():\n%s | %s - %s\n\tContext: "
+            "%s\nStack trace:\n",
+            color_code, file, line, function,
+            GetSeverityString(object->severity), object->title,
+            object->description, object->context);
+    PrintStacktrace(output, trace);
+    fprintf(output, "\033[0m\n");
+
+    free(trace);
 }
 
 void Ir_SilenceLogs(bool silence) { silence_logs = silence; }

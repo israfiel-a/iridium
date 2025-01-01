@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.31.3 FATAL_ERROR)
-# Version number flubbed until proper system set up.
-project("Iridium" LANGUAGES C VERSION 0.1.0 DESCRIPTION "A 3D game engine written in C23.")
+project("Iridium" LANGUAGES C VERSION 0.0.1 DESCRIPTION "A 3D game engine written in C23.")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Iridium/Demos)

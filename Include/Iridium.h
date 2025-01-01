@@ -4,8 +4,9 @@
  * @brief This file provides the base of the Iridium API. That includes the
  * vital engine startup functions, alongside some methods for grabbing
  * metadata.
+ * @since 0.1.0
  *
- * Copyright (c) 2024 the Iridium Development Team
+ * @copyright (c) 2024 the Iridium Development Team
  * This file is under the AGPLv3. For more information on what that
  * entails, see the LICENSE file provided with the engine.
  */
@@ -18,6 +19,7 @@
  * @name version
  * @brief A merged 32-bit version identifier. Can be created via the
  * MakeVersion function and exploded via the SplitVersion function.
+ * @since 0.1.0
  */
 typedef uint32_t ir_version_t;
 
@@ -25,6 +27,7 @@ typedef uint32_t ir_version_t;
  * @name application_info
  * @brief An application's information structure. This is passed to the
  * engine ignition function for metadata purposes.
+ * @since 0.1.0
  */
 typedef struct application_info
 {
@@ -32,11 +35,13 @@ typedef struct application_info
      * @brief The name of the application. This will be copied into
      * an internal engine buffer. This is set to the title of the window
      * when created.
+     * @since 0.1.0
      */
     const char *name;
     /**
      * @brief The application's version. This is used purely for metadata
      * purposes.
+     * @since 0.1.0
      */
     ir_version_t version;
 } ir_application_info_t;

@@ -4,13 +4,16 @@
  * @brief This file provides the logging API for the Iridium engine. This
  * includes an abstraction from stdout in case the user wants to pipe
  * output to a log file.
+ * @since 0.1.0
  *
- * Copyright (c) 2024 the Iridium Development Team
+ * @copyright (c) 2024 the Iridium Development Team
  * This file is under the AGPLv3. For more information on what that
  * entails, see the LICENSE file provided with the engine.
  */
 #ifndef IRIDIUM_LOGGING_H
 #define IRIDIUM_LOGGING_H
+
+//! replace version numbers with the proper ones!
 
 #include <stdint.h>
 #include <stdio.h>
@@ -64,5 +67,8 @@ const ir_output_t *Ir_GetLogOutput(void);
 const ir_output_t *Ir_GetErrorOutput(void);
 
 const ir_output_t *Ir_GetPanicOutput(void);
+
+// unimplemented
+void SetStackTrace(bool trace);
 
 #endif // IRIDIUM_LOGGING_H

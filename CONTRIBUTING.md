@@ -39,6 +39,7 @@ Table of contents:
      * @file [file name]
      * @authors [developer name(s)]
      * @brief [description]
+     * @since [version]
      *
      * @copyright (c) [year] the Iridium Development Team
      * This file is under the AGPLv3. For more information on what that 
@@ -71,12 +72,13 @@ Table of contents:
      */
     ```
 
-    Variables are far more simple;
+    Variables and types are far more simple;
 
     ```c
     /**
      * @name [variable name]
      * @brief [variable description]
+     * @since [version]
      */
     ```
 
@@ -110,3 +112,6 @@ Table of contents:
     ```
 
     What value do these comments add? Nothing. Such comments should be removed.
+
+2. #### Casting
+    Casting can be very powerful or very destructive. Implicit casts are allowed, except for one outlier; function return values. Function return values should always be taken into account, they're there for a reason. Whenever you do not care about the return value of a given function, you **must** cast it to void.
