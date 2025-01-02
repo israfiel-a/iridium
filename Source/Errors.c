@@ -10,10 +10,10 @@
  * entails, see the LICENSE file provided with the engine.
  */
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <Errors.h>
+#include <Memory.h>
 
 /**
  * @name fatality_level
@@ -55,8 +55,7 @@ static ir_problem_t *reported_problems = nullptr;
  * @since 0.0.1
  */
 static const ir_severity_t problem_severities[] = {
-    [ir_no_error] = ir_success, // paradoxical lol
-    [ir_failed_allocation] = ir_panic,
+    [ir_no_error] = ir_success, // paradoxical lols
     [ir_unexpected_param] = ir_warning,
     [ir_failed_wayland_connection] = ir_panic,
     [ir_failed_wayland_registry] = ir_panic,
@@ -69,7 +68,6 @@ static const ir_severity_t problem_severities[] = {
  */
 static const char *const problem_strings[] = {
     [ir_no_error] = "ir_no_error",
-    [ir_failed_allocation] = "ir_failed_allocation",
     [ir_unexpected_param] = "ir_unexpected_param",
     [ir_failed_wayland_connection] = "ir_failed_wayland_connection",
     [ir_failed_wayland_registry] = "ir_failed_wayland_registry",
@@ -249,12 +247,10 @@ bool Ir_PullProblem(size_t index, ir_problem_t *error)
         return false;
     }
 
-    if (error != nullptr && error != NULL)
-        *error = reported_problems[index];
-
+    if (error != nullptr) *error = reported_problems[index];
     if (reported_problem_count == 1)
     {
-        free(reported_problems);
+        Ir_Free((void **)&reported_problems);
         reported_problem_count = 0;
         return true;
     }
@@ -264,11 +260,8 @@ bool Ir_PullProblem(size_t index, ir_problem_t *error)
             &reported_problems[index], &reported_problems[index + 1],
             sizeof(ir_problem_t) * (reported_problem_count - index - 1));
 
-    reported_problems =
-        realloc(reported_problems,
-                sizeof(ir_problem_t) * (reported_problem_count--));
-    if (reported_problems == NULL)
-        Ir_ReportProblem(ir_failed_allocation, ir_override_infer, nullptr);
+    Ir_Realloc((void **)&reported_problems,
+               sizeof(ir_problem_t) * (reported_problem_count--));
 
     return true;
 }
@@ -276,18 +269,13 @@ bool Ir_PullProblem(size_t index, ir_problem_t *error)
 void Ir_ClearProblemStack(void)
 {
     reported_problem_count = 0;
-    free(reported_problems);
-    reported_problems = nullptr;
+    Ir_Free((void **)&reported_problems);
 }
 
 void Ir_CatchProblems(const char *function_name)
 {
-    silenced_functions =
-        realloc(silenced_functions,
-                sizeof(const char *) * (silenced_function_count + 1));
-    if (silenced_functions == NULL)
-        Ir_ReportProblem(ir_failed_allocation, ir_override_infer, nullptr);
-
+    Ir_Realloc((void **)&silenced_functions,
+               sizeof(const char *) * (silenced_function_count + 1));
     silenced_functions[silenced_function_count] = function_name;
     silenced_function_count++;
 }
@@ -297,8 +285,7 @@ bool Ir_ReleaseProblems(const char *function_name)
     if (function_name == NULL || function_name == nullptr)
     {
         silenced_function_count = 0;
-        free(silenced_functions);
-        silenced_functions = nullptr;
+        Ir_Free((void **)&silenced_functions);
         return true;
     }
 
@@ -319,14 +306,8 @@ bool Ir_ReleaseProblems(const char *function_name)
         silenced_function_count--;
         if (silenced_function_count == 0) Ir_ReleaseProblems(nullptr);
         else
-        {
-            silenced_functions =
-                realloc(silenced_functions,
-                        sizeof(const char *) * silenced_function_count);
-            if (silenced_functions == NULL)
-                Ir_ReportProblem(ir_failed_allocation, ir_override_infer,
-                                 nullptr);
-        }
+            Ir_Realloc((void **)&silenced_functions,
+                       sizeof(const char *) * silenced_function_count);
     }
 
     return collapse;
@@ -350,32 +331,27 @@ void Ir_ReportProblem_(ir_problem_code_t code,
 
     if (GetLoggability(function, error.severity))
     {
-        ir_loggable_t loggable = {.severity = error.severity,
-                                  .title = "Problem Reported",
-                                  .description = problem_strings[code],
-                                  .context = context};
+        ir_loggable_t loggable = Ir_CreateLoggable(
+            "Problem Reported", problem_strings[code], context);
+        loggable.severity = error.severity;
         Ir_Log_(&loggable, filename, function, line);
     }
 
-    // Kill the process should it be given a fatal error.
-    if (GetFatality(function, error.severity)) exit(255);
+    // Kill the process should it be given a fatal error. However, note
+    // that panics are already handled within Ir_Log, not here.
+    if (GetFatality(function, error.severity)) abort();
 
     if (reported_problem_count + 1 <= max_reported_problems)
     {
-        reported_problems =
-            realloc(reported_problems,
-                    sizeof(ir_problem_t) * (reported_problem_count + 1));
-        if (reported_problems == NULL)
-            Ir_ReportProblem(ir_failed_allocation, ir_override_infer,
-                             nullptr);
-
+        Ir_Realloc((void **)&reported_problems,
+                   sizeof(ir_problem_t) * (reported_problem_count + 1));
         reported_problems[reported_problem_count] = error;
         reported_problem_count++;
     }
     else
     {
-        memmove(&reported_problems[0], &reported_problems[1],
-                reported_problem_count - 1);
+        (void)memmove(&reported_problems[0], &reported_problems[1],
+                      reported_problem_count - 1);
         // The reported error buffer hasn't expanded, so this needs to
         // access the current last member (count - 1).
         reported_problems[reported_problem_count - 1] = error;

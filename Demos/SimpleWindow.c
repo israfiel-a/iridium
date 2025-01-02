@@ -1,21 +1,10 @@
 #include <Errors.h>
 #include <Iridium.h>
+#include <Logging.h>
 
 int main(void)
 {
-    Ir_SetMaxProblems(5);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    Ir_ReportProblem(ir_failed_allocation, ir_override_error, nullptr);
-    ir_problem_t problem;
-    Ir_PullProblem(0, &problem);
+    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer, "");
+
     return 0;
 }

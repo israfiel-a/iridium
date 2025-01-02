@@ -4,7 +4,7 @@
  * @brief This file provides the logging API for the Iridium engine. This
  * includes an abstraction from stdout in case the user wants to pipe
  * output to a log file.
- * @since 0.1.0
+ * @since 0.0.1
  *
  * @copyright (c) 2024 the Iridium Development Team
  * This file is under the AGPLv3. For more information on what that
@@ -13,62 +13,296 @@
 #ifndef IRIDIUM_LOGGING_H
 #define IRIDIUM_LOGGING_H
 
-//! replace version numbers with the proper ones!
-
 #include <stdint.h>
 #include <stdio.h>
 
-typedef FILE *ir_output_t;
+/**
+ * @name output
+ * @brief An output stream object.
+ * @since 0.0.1
+ */
+typedef FILE ir_output_t;
 
+/**
+ * @name severity
+ * @brief The severity level of a log or problem.
+ * @since 0.0.1
+ */
 typedef enum ir_severity
 {
+    /**
+     * @brief An operation succeeded (green). A log marked with this can be
+     * safely ignored.
+     * @since 0.0.1
+     */
     ir_success,
+    /**
+     * @brief A simple log is output (default). A log marked with this can
+     * be safely ignored.
+     * @since 0.0.1
+     */
     ir_log,
+    /**
+     * @brief A warning log is output (orange). A log marked with this
+     * should only be of interest to a developer.
+     * @since 0.0.1
+     */
     ir_warning,
+    /**
+     * @brief An error log is output (red). A log marked with this should
+     * be of interest to both user and developer, but should not be fatal
+     * to the application.
+     * @since 0.0.1
+     */
     ir_error,
     /**
-     * @brief document panic-throwers
+     * @brief A panic log is output (bold, underlined red). A log marked
+     * with this should be of extreme interest to developer and user
+     * alike--these abort the process, and are not thrown about uselessly.
+     * @since 0.0.1
      */
     ir_panic
 } ir_severity_t;
 
+/**
+ * @name loggable
+ * @brief A loggable object. This will be morphed into the Iridium log
+ * format when output. It is not advisable to create these yourself,
+ * instead use CreateLoggable or one of its sister functions.
+ * @since 0.0.1
+ */
 typedef struct ir_loggable
 {
+    /**
+     * @brief The severity of the log.
+     * @since 0.0.1
+     */
     ir_severity_t severity;
+    /**
+     * @brief The title of the log.
+     * @since 0.0.1
+     */
     const char *title;
-    const char *description;
-    const char *context;
+    /**
+     * @brief A description of the log.
+     * @since 0.0.1
+     */
+    char *description;
+    /**
+     * @brief Extended context about the log.
+     * @since 0.0.1
+     */
+    char *context;
 } ir_loggable_t;
-
-void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
-             uint32_t line);
-
-#define Ir_Log(object) Ir_Log_(object, FILENAME, __func__, __LINE__)
 
 /**
  * @name SilenceLogs
  * @authors Israfil Argos
- * @brief Silence all logs that aren't warnings, errors, or panics. This is
- * reccomended for production builds, as it can increase performance
- * substantially on some systems.
+ * @brief Allow/disallow logging for severities below "error." Successes
+ * and logs will no longer be output to @b any output stream.
+ * @since 0.0.1
  *
- * @param silence The new silence flag. False for off, true for on.
+ * @param silence The new silence flag. True to silence, false to
+ * unsilence.
  */
 void Ir_SilenceLogs(bool silence);
 
-void Ir_SetLogOutput(ir_output_t output);
+/**
+ * @name AllowANSI
+ * @authors Israfil Argos
+ * @brief Allow ANSI color/typeface escape codes to be output anywhere. If
+ * the output object is stdout ANSI sequences are enabled regardless.
+ * @since 0.0.2
+ *
+ * @param allowed The allow flag. False to disable, true to enable.
+ */
+void Ir_AllowANSI(bool allowed);
 
-void Ir_SetErrorOutput(ir_output_t output);
+/**
+ * @name SetLogOutput
+ * @authors Israfil Argos
+ * @brief Set the output for successes, logs, and warnings.
+ * @since 0.0.1
+ *
+ * @param output The output to redirect normal logs to. This may not be
+ * null. Instead, silence development logs via the SilenceLogs function.
+ */
+[[gnu::nonnull(1)]]
+void Ir_SetLogOutput(ir_output_t *output);
 
-void Ir_SetPanicOutput(ir_output_t output);
+/**
+ * @name SetErrorOutput
+ * @authors Israfil Argos
+ * @brief Set the output for errors. If not panic output has been set, this
+ * is also the output that falls back on.
+ * @since 0.0.1
+ *
+ * @param output The output to redirect error logs to.
+ */
+void Ir_SetErrorOutput(ir_output_t *output);
 
+/**
+ * @name SetPanicOutput
+ * @authors Israfil Argos
+ * @brief Set the output for panics.
+ * @since 0.0.1
+ *
+ * @param output The output to redirect panic logs to.
+ */
+void Ir_SetPanicOutput(ir_output_t *output);
+
+/**
+ * @name GetLogOutput
+ * @authors Israfil Argos
+ * @brief Get the output for regular logs. This is also the fallback output
+ * for errors and panics if one has not been set for them.
+ * @since 0.0.1
+ *
+ * @returns The requested output.
+ */
+[[nodiscard("Expression result unused.")]]
 const ir_output_t *Ir_GetLogOutput(void);
 
+/**
+ * @name GetErrorOutput
+ * @authors Israfil Argos
+ * @brief Get the output for error logs. This is also the fallback output
+ * for panics if one has not been set for them.
+ * @since 0.0.1
+ *
+ * @returns The requested output, or nullptr if one has not been set.
+ */
+[[nodiscard("Expression result unused.")]]
 const ir_output_t *Ir_GetErrorOutput(void);
 
+/**
+ * @name GetPanicOutput
+ * @authors Israfil Argos
+ * @brief Get the output for panic logs.
+ * @since 0.0.1
+ *
+ * @returns The requested output, or nullptr if one has not been set.
+ */
+[[nodiscard("Expression result unused.")]]
 const ir_output_t *Ir_GetPanicOutput(void);
 
-// unimplemented
-void SetStackTrace(bool trace);
+/**
+ * @name SilenceStackTrace
+ * @authors Israfil Argos
+ * @brief Allow/disallow stack traces within logs. This flag does not
+ * effect panics, which have their stack trace disabled because of their
+ * quick-fail nature.
+ * @since 0.0.2
+ *
+ * @param silence The new silence flag. True to silence, false to
+ * unsilence.
+ */
+void Ir_SilenceStackTrace(bool silence);
+
+/**
+ * @name SetStackTraceDepth
+ * @authors Israfil Argos
+ * @brief Set the depth of a stack trace. The maximum suggested size is 10,
+ * although there is no true cap.
+ * @since 0.0.2
+ *
+ * @param depth The depth that stack traces should be.
+ */
+void Ir_SetStackTraceDepth(size_t depth);
+
+/**
+ * @name CreateLoggable
+ * @authors Israfil Argos
+ * @brief Create a loggable via exactly the strings provided. The severity
+ * is automatically that of a regular log. For formatted inputs, see
+ * CreateLoggableDF and CreateLoggableCF.
+ * @since 0.0.2
+ *
+ * @param title The title of the log. This is not copied from the provided
+ * string.
+ * @param description A description of the log. This is copied from the
+ * provided string.
+ * @param context Any extra context about the log. This is copied from the
+ * provided string.
+ * @returns A loggable object.
+ */
+[[gnu::nonnull(1, 2)]] [[nodiscard("Expression result unused.")]]
+ir_loggable_t Ir_CreateLoggable(const char *title, const char *description,
+                                const char *context);
+
+/**
+ * @name CreateLoggableDF
+ * @authors Israfil Argos
+ * @brief Create a loggable via the format string provided. The severity is
+ * by default that of a normal log, and the context is nullptr.
+ * @since 0.0.2
+ *
+ * @param title The title of the log. This is not copied from the provided
+ * string.
+ * @param description_format The format string for the log's description.
+ * @param ... Arguments to be substituted in the description format string.
+ * @returns A loggable object.
+ */
+[[gnu::format(printf, 2, 3)]] [[gnu::nonnull(1, 2)]] [[nodiscard(
+    "Expression result unused.")]]
+ir_loggable_t Ir_CreateLoggableDF(const char *title,
+                                  const char *description_format, ...);
+
+/**
+ * @name CreateLoggableCF
+ * @authors Israfil Argos
+ * @brief Create a loggable via the format string provided. The severity is
+ * by default that of a normal log.
+ * @since 0.0.2
+ *
+ * @param title The title of the log. This is not copied from the provided
+ * string.
+ * @param description The description of the log. This is copied from the
+ * provided string.
+ * @param context_format The format string for the log's context.
+ * @param ... Arguments to be substituted in the context format string.
+ * @returns A loggable object.
+ */
+[[gnu::format(printf, 3, 4)]] [[gnu::nonnull(1, 2, 3)]] [[nodiscard(
+    "Expression result unused.")]]
+ir_loggable_t Ir_CreateLoggableCF(const char *title,
+                                  const char *description,
+                                  const char *context_format, ...);
+
+/**
+ * @name DestroyLoggable
+ * @authors Israfil Argos
+ * @brief Destroy a loggable object. This will erase everything within the
+ * provided loggable.
+ *
+ * @param loggable The loggable to be destroyed.
+ */
+[[gnu::nonnull(1)]]
+void Ir_DestroyLoggable(ir_loggable_t *loggable);
+
+/**
+ * @name Log_
+ * @authors Israfil Argos
+ * @brief Log something to its proper output (internal).
+ * @since 0.0.1
+ *
+ * @param object The loggable item.
+ * @param file The file this log came from.
+ * @param function The function this log came from.
+ * @param line The line this log came from.
+ */
+[[gnu::nonnull(1, 2, 3)]]
+void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
+             uint32_t line);
+
+/**
+ * @name Log
+ * @authors Israfil Argos
+ * @brief Log something to its proper output.
+ * @since 0.0.1
+ *
+ * @param object The loggable item.
+ */
+#define Ir_Log(object) Ir_Log_(object, FILENAME, __func__, __LINE__)
 
 #endif // IRIDIUM_LOGGING_H

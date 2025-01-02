@@ -11,7 +11,7 @@ Iridium is a 3D game engine built using [C23](https://en.wikipedia.org/wiki/C23_
 Iridium is built to be as light as possible on the dependency side of things. However, we can't reinvent **every** wheel, so the project still requires:
 
 - [libVulkan](https://www.vulkan.org/) (all platforms)
-- [libWayland](https://wayland.freedesktop.org/) (Wayland Linux)
+- [libWayland](https://wayland.freedesktop.org/) (Linux)
 
 ---
 
@@ -33,5 +33,7 @@ Contributions to the engine must follow our [contribution guidelines](./CONTRIBU
 - [Don't be a dick.](./CONTRIBUTING.md#community-interaction)
 
 Beyond those golden rules, help out where you can, add new functionality where it's needed, and generally have fun. Well, as much fun as you can have in C.
+
+> We are looking for contributors, especially those well-versed in C optimization. We are not professionals, and so mistakes are bound to crop up. If you've got a couple of hours--or even minutes--to spare, look over one of the implementation files and submit a PR if you find anything!
 
 ![iridium_logo](./Modules/iridium-bottom-banner.jpg)

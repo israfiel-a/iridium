@@ -28,11 +28,6 @@ typedef enum ir_problem_code
      */
     ir_no_error,
     /**
-     * @brief An allocation failed. This is a panic.
-     * @since 0.0.1
-     */
-    ir_failed_allocation,
-    /**
      * @brief A provided parameter was unexpected in the function context.
      * This is a warning.
      * @since 0.0.1

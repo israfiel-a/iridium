@@ -115,3 +115,30 @@ Table of contents:
 
 2. #### Casting
     Casting can be very powerful or very destructive. Implicit casts are allowed, except for one outlier; function return values. Function return values should always be taken into account, they're there for a reason. Whenever you do not care about the return value of a given function, you **must** cast it to void.
+
+3. #### Function Alternatives
+    When you have two functions that carry out the same process with different parameters, for example a function that defiens an object with or without a format string, a title distinction must be made. This is in the form of one or two characters at the function name's end that describe this functionality change. Take, for example, the following functions from within `Logging.h`:
+
+    ```c
+    // ...
+
+    [[gnu::always_inline]] [[nodiscard("Expression result unused.")]]
+    inline ir_loggable_t Ir_CreateLoggable(const char *title,
+                                        const char *description,
+                                        const char *context)
+    {
+        return (ir_loggable_t){ir_log, title, description, context};
+    }
+
+    [[gnu::format(printf, 2, 3)]] [[nodiscard("Expression result unused.")]]
+    ir_loggable_t Ir_CreateLoggableDF(const char *title,
+                                const char *description_format, ...);
+
+    [[gnu::format(printf, 3, 4)]] [[nodiscard("Expression result unused.")]]
+    ir_loggable_t Ir_CreateLoggableCF(const char *title, const char *description,
+                                const char *context_format, ...);
+
+    // ...
+    ```
+
+    These three functions do, functionally, the same thing. They take some strings, create a loggable object, and return it. The difference is that two of them use format strings, each in different places. So they are suffixed with a `DF` (description format) and `CF` (context format).
