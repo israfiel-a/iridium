@@ -50,7 +50,12 @@ typedef enum ir_problem_code
      * (outlined in Wayland.h). This a panic.
      * @since 0.0.1
      */
-    ir_failed_wayland_components
+    ir_failed_wayland_components,
+    /**
+     * @brief A file open failed.
+     * @since 0.0.2
+     */
+    ir_failed_file_open
 } ir_problem_code_t;
 
 /**
@@ -228,14 +233,6 @@ const ir_problem_t *Ir_GetProblem(size_t index);
 bool Ir_PullProblem(size_t index, ir_problem_t *problem);
 
 /**
- * @name ClearProblemStack
- * @authors Israfil Argos
- * @brief Clear the problem stack entirely from memory.
- * @since 0.0.1
- */
-void Ir_ClearProblemStack(void);
-
-/**
  * @name CatchProblems
  * @authors Israfil Argos
  * @brief Don't log any problems reported within the specified function,
@@ -281,6 +278,8 @@ bool Ir_ReleaseProblems(const char *function_name);
  * @param override An override for the code's default severity. If you do
  * not want to to override, set this to ir_override_infer.
  * @param context Any extra context for the problem. This can be NULL.
+ * Should the reported error code be noted as being accompanied by ERRNO,
+ * this value is replaced by ERRNO.
  * @param filename The name of the file from which the problem was sent.
  * This is defined during the build process as the file's basename + its
  * extension.
@@ -303,6 +302,8 @@ void Ir_ReportProblem_(ir_problem_code_t code,
  * @param override An override for the code's default severity. If you do
  * not want to to override, set this to ir_override_infer.
  * @param context Any extra context for the problem. This can be NULL.
+ * Should the reported error code be noted as being accompanied by ERRNO,
+ * this value is replaced by ERRNO.
  */
 #define Ir_ReportProblem(code, override, context)                         \
     Ir_ReportProblem_(code, override, context, FILENAME, __func__,        \

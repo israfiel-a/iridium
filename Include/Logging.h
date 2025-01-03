@@ -121,7 +121,8 @@ void Ir_AllowANSI(bool allowed);
 /**
  * @name SetLogOutput
  * @authors Israfil Argos
- * @brief Set the output for successes, logs, and warnings.
+ * @brief Set the output for successes, logs, and warnings. This must not
+ * be fclosed, the engine will close the stream automatically on exit.
  * @since 0.0.1
  *
  * @param output The output to redirect normal logs to. This may not be
@@ -131,10 +132,27 @@ void Ir_AllowANSI(bool allowed);
 void Ir_SetLogOutput(ir_output_t *output);
 
 /**
+ * @name SetLogOutputS
+ * @authors Israfil Argos
+ * @brief Set the log output (see SetLogOutput) via a string path. This
+ * automatically opens the file in write mode--overwriting any prior
+ * contents.
+ * @since 0.0.2
+ *
+ * @warning Should the file not exist (or fopen runs into another problem)
+ * this function will throw an ir_failed_file_open error.
+ *
+ * @param path The path to open from.
+ * @returns A boolean expression representing the success of the operation.
+ */
+[[gnu::nonnull(1)]]
+bool Ir_SetLogOutputS(const char *path);
+
+/**
  * @name SetErrorOutput
  * @authors Israfil Argos
- * @brief Set the output for errors. If not panic output has been set, this
- * is also the output that falls back on.
+ * @brief Set the output for errors. This must not be fclosed, the
+ * engine will close the stream automatically on exit.
  * @since 0.0.1
  *
  * @param output The output to redirect error logs to.
@@ -142,14 +160,21 @@ void Ir_SetLogOutput(ir_output_t *output);
 void Ir_SetErrorOutput(ir_output_t *output);
 
 /**
- * @name SetPanicOutput
+ * @name SetErrorOutputS
  * @authors Israfil Argos
- * @brief Set the output for panics.
- * @since 0.0.1
+ * @brief Set the error log output (see SetErrorOutput) via a string path.
+ * This automatically opens the file in write mode--overwriting any prior
+ * contents.
+ * @since 0.0.2
  *
- * @param output The output to redirect panic logs to.
+ * @warning Should the file not exist (or fopen runs into another problem)
+ * this function will throw an ir_failed_file_open error.
+ *
+ * @param path The path to open from.
+ * @returns A boolean expression representing the success of the operation.
  */
-void Ir_SetPanicOutput(ir_output_t *output);
+[[gnu::nonnull(1)]]
+bool Ir_SetErrorOutputS(const char *path);
 
 /**
  * @name GetLogOutput
@@ -166,8 +191,7 @@ const ir_output_t *Ir_GetLogOutput(void);
 /**
  * @name GetErrorOutput
  * @authors Israfil Argos
- * @brief Get the output for error logs. This is also the fallback output
- * for panics if one has not been set for them.
+ * @brief Get the output for error logs.
  * @since 0.0.1
  *
  * @returns The requested output, or nullptr if one has not been set.
@@ -176,18 +200,7 @@ const ir_output_t *Ir_GetLogOutput(void);
 const ir_output_t *Ir_GetErrorOutput(void);
 
 /**
- * @name GetPanicOutput
- * @authors Israfil Argos
- * @brief Get the output for panic logs.
- * @since 0.0.1
- *
- * @returns The requested output, or nullptr if one has not been set.
- */
-[[nodiscard("Expression result unused.")]]
-const ir_output_t *Ir_GetPanicOutput(void);
-
-/**
- * @name SilenceStackTrace
+ * @name SilenceStacktrace
  * @authors Israfil Argos
  * @brief Allow/disallow stack traces within logs. This flag does not
  * effect panics, which have their stack trace disabled because of their
@@ -197,18 +210,43 @@ const ir_output_t *Ir_GetPanicOutput(void);
  * @param silence The new silence flag. True to silence, false to
  * unsilence.
  */
-void Ir_SilenceStackTrace(bool silence);
+void Ir_SilenceStacktrace(bool silence);
 
 /**
- * @name SetStackTraceDepth
+ * @name SetStacktraceDepth
  * @authors Israfil Argos
  * @brief Set the depth of a stack trace. The maximum suggested size is 10,
- * although there is no true cap.
+ * although the true max is 255.
  * @since 0.0.2
  *
  * @param depth The depth that stack traces should be.
  */
-void Ir_SetStackTraceDepth(size_t depth);
+void Ir_SetStacktraceDepth(uint8_t depth);
+
+/**
+ * @name GetStacktrace
+ * @authors Israfil Argos
+ * @brief Get the string representation of a stack trace. The return value
+ * of this must be freed manually.
+ * @since 0.0.2
+ *
+ * @return The stack trace. The length of the array is the current stack
+ * trace depth plus one, which is 7 (8) by default. The array is also ended
+ * via a nullptr.
+ */
+char **Ir_GetStacktrace(void);
+
+/**
+ * @name PrintStacktrace
+ * @authors Israfil Argos
+ * @brief Print a stacktrace to the given output. This should be an open,
+ * non-bad file handle.
+ * @since 0.0.2
+ *
+ * @param output The output stream.
+ */
+[[gnu::nonnull(1)]]
+void Ir_PrintStacktrace(ir_output_t *output);
 
 /**
  * @name CreateLoggable

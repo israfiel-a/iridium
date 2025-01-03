@@ -1,8 +1,6 @@
 #ifndef IRIDIUM_MEMORY_H
 #define IRIDIUM_MEMORY_H
 
-#include <stdlib.h>
-
 #include <Errors.h>
 
 [[gnu::hot]] [[gnu::malloc]]

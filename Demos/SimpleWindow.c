@@ -4,7 +4,8 @@
 
 int main(void)
 {
-    Ir_ReportProblem(ir_failed_wayland_connection, ir_override_infer, "");
+    Ir_SetLogOutputS("./log");
+    Ir_ReportProblem(ir_unexpected_param, ir_override_infer, "helloooo");
 
     return 0;
 }

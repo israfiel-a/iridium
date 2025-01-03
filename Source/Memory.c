@@ -1,4 +1,5 @@
 #include <Memory.h>
+#include <stdlib.h>
 
 void *Ir_Malloc(size_t size)
 {
@@ -20,12 +21,6 @@ void Ir_Realloc(void **ptr, size_t size)
     {
         Ir_ReportProblem(ir_unexpected_param, ir_override_infer,
                          "size = 0");
-        return;
-    }
-    if (*ptr == nullptr)
-    {
-        Ir_ReportProblem(ir_unexpected_param, ir_override_infer,
-                         "ptr = null");
         return;
     }
 

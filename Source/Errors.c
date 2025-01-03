@@ -10,6 +10,8 @@
  * entails, see the LICENSE file provided with the engine.
  */
 
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <Errors.h>
@@ -59,7 +61,8 @@ static const ir_severity_t problem_severities[] = {
     [ir_unexpected_param] = ir_warning,
     [ir_failed_wayland_connection] = ir_panic,
     [ir_failed_wayland_registry] = ir_panic,
-    [ir_failed_wayland_components] = ir_panic};
+    [ir_failed_wayland_components] = ir_panic,
+    [ir_failed_file_open] = ir_error};
 
 /**
  * @name problem_strings
@@ -71,7 +74,8 @@ static const char *const problem_strings[] = {
     [ir_unexpected_param] = "ir_unexpected_param",
     [ir_failed_wayland_connection] = "ir_failed_wayland_connection",
     [ir_failed_wayland_registry] = "ir_failed_wayland_registry",
-    [ir_failed_wayland_components] = "ir_failed_wayland_components"};
+    [ir_failed_wayland_components] = "ir_failed_wayland_components",
+    [ir_failed_file_open] = "ir_failed_file_open"};
 
 /**
  * @name warnings_silenced
@@ -103,6 +107,22 @@ static size_t silenced_function_count = 0;
  * @since 0.0.1
  */
 static const char **silenced_functions = nullptr;
+
+/**
+ * @name FreeStacks
+ * @author Israfil Argos
+ * @brief This is called once the application exits and frees both the
+ * silenced function and reported problem list. This removes the need for
+ * manual destruction.
+ * @since 0.0.2
+ */
+[[gnu::destructor]]
+static void FreeStacks()
+{
+    if (reported_problems != nullptr) Ir_Free((void **)&reported_problems);
+    if (silenced_functions != nullptr)
+        Ir_Free((void **)&silenced_functions);
+}
 
 /**
  * @name GetFunctionSilenced
@@ -170,6 +190,30 @@ static bool GetFatality(const char *function, ir_severity_t severity)
     if (fatality_level != ir_all_problems && severity == ir_warning)
         return false;
     return true;
+}
+
+/**
+ * @name GetContext
+ * @authors Israfil Argos
+ * @brief Get the context of the given error code; some APIs need other
+ * error codes provided, which overwrites whatever nonsense the user's
+ * provided.
+ * @since 0.0.2
+ *
+ * @param provided_context Any context that was provided by the user.
+ * @param code The code reported.
+ * @returns The needed context, be it ERRNO or provided context or
+ * something else.
+ */
+static const char *GetContext(const char *provided_context,
+                              ir_problem_code_t code)
+{
+    switch (code)
+    {
+        case ir_failed_wayland_connection: [[fallthrough]];
+        case ir_failed_file_open:          return strerror(errno);
+        default:                           return provided_context;
+    }
 }
 
 /**
@@ -266,12 +310,6 @@ bool Ir_PullProblem(size_t index, ir_problem_t *error)
     return true;
 }
 
-void Ir_ClearProblemStack(void)
-{
-    reported_problem_count = 0;
-    Ir_Free((void **)&reported_problems);
-}
-
 void Ir_CatchProblems(const char *function_name)
 {
     Ir_Realloc((void **)&silenced_functions,
@@ -327,12 +365,12 @@ void Ir_ReportProblem_(ir_problem_code_t code,
 
     ir_problem_t error = {.code = code,
                           .severity = GetSeverity(code, override),
-                          .context = context};
+                          .context = GetContext(context, code)};
 
     if (GetLoggability(function, error.severity))
     {
         ir_loggable_t loggable = Ir_CreateLoggable(
-            "Problem Reported", problem_strings[code], context);
+            "Problem Reported", problem_strings[code], error.context);
         loggable.severity = error.severity;
         Ir_Log_(&loggable, filename, function, line);
     }
