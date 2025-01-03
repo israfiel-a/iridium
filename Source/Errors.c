@@ -154,7 +154,7 @@ static bool GetFunctionSilenced(const char *function)
  * code's new severity.
  * @returns The severity of the given code.
  */
-[[nodiscard("Expression result unused.")]]
+[[gnu::pure]] [[nodiscard("Expression result unused.")]]
 static ir_severity_t GetSeverity(ir_problem_code_t code,
                                  ir_severity_override_t override)
 {

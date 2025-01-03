@@ -274,6 +274,10 @@ bool Ir_ReleaseProblems(const char *function_name);
  * @brief Report that a problem occurred (internal).
  * @since 0.0.1
  *
+ * @warning Should the severity of this problem be resolved to panic (or
+ * should the fatality level be cranked up), this function will abort the
+ * thread and generate a core dump.
+ *
  * @param code The code of the problem.
  * @param override An override for the code's default severity. If you do
  * not want to to override, set this to ir_override_infer.
@@ -287,7 +291,7 @@ bool Ir_ReleaseProblems(const char *function_name);
  * sent.
  * @param line The line from which the problem was sent.
  */
-[[gnu::nonnull(4, 5)]]
+[[gnu::nonnull(4, 5)]] [[gnu::hot]]
 void Ir_ReportProblem_(ir_problem_code_t code,
                        ir_severity_override_t override,
                        const char *context, const char *filename,

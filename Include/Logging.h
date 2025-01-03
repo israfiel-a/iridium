@@ -177,29 +177,6 @@ void Ir_SetErrorOutput(ir_output_t *output);
 bool Ir_SetErrorOutputS(const char *path);
 
 /**
- * @name GetLogOutput
- * @authors Israfil Argos
- * @brief Get the output for regular logs. This is also the fallback output
- * for errors and panics if one has not been set for them.
- * @since 0.0.1
- *
- * @returns The requested output.
- */
-[[nodiscard("Expression result unused.")]]
-const ir_output_t *Ir_GetLogOutput(void);
-
-/**
- * @name GetErrorOutput
- * @authors Israfil Argos
- * @brief Get the output for error logs.
- * @since 0.0.1
- *
- * @returns The requested output, or nullptr if one has not been set.
- */
-[[nodiscard("Expression result unused.")]]
-const ir_output_t *Ir_GetErrorOutput(void);
-
-/**
  * @name SilenceStacktrace
  * @authors Israfil Argos
  * @brief Allow/disallow stack traces within logs. This flag does not
@@ -230,9 +207,9 @@ void Ir_SetStacktraceDepth(uint8_t depth);
  * of this must be freed manually.
  * @since 0.0.2
  *
- * @return The stack trace. The length of the array is the current stack
- * trace depth plus one, which is 7 (8) by default. The array is also ended
- * via a nullptr.
+ * @returns The stack trace, or null should an error have occurred. The
+ * length of the array is the current stack trace depth plus one, which is
+ * 7 (8) by default. The array is also ended via a nullptr.
  */
 char **Ir_GetStacktrace(void);
 
@@ -324,12 +301,16 @@ void Ir_DestroyLoggable(ir_loggable_t *loggable);
  * @brief Log something to its proper output (internal).
  * @since 0.0.1
  *
+ * @warning Should the severity of the passed loggable be resolved to
+ * panic (or should the fatality level be cranked up), this function will
+ * abort the thread and generate a core dump.
+ *
  * @param object The loggable item.
  * @param file The file this log came from.
  * @param function The function this log came from.
  * @param line The line this log came from.
  */
-[[gnu::nonnull(1, 2, 3)]]
+[[gnu::nonnull(1, 2, 3)]] [[gnu::hot]]
 void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
              uint32_t line);
 
@@ -338,6 +319,10 @@ void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
  * @authors Israfil Argos
  * @brief Log something to its proper output.
  * @since 0.0.1
+ *
+ * @warning Should the severity of the passed loggable be resolved to
+ * panic (or should the fatality level be cranked up), this function will
+ * abort the thread and generate a core dump.
  *
  * @param object The loggable item.
  */

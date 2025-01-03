@@ -66,10 +66,32 @@ static bool stacktrace_silenced = false;
 static uint8_t stacktrace_depth = 7;
 
 /**
+ * @name severity_strings
+ * @brief The string representations of the possible log severities.
+ * @since 0.0.2
+ */
+static const char *const severity_strings[] = {[ir_success] = "success",
+                                               [ir_log] = "log",
+                                               [ir_warning] = "warning",
+                                               [ir_error] = "error",
+                                               [ir_panic] = "panic"};
+
+/**
+ * @name severity_colors
+ * @brief The ANSI color codes for each possible log severity.
+ * @since 0.0.2
+ */
+static const char* const severity_colors[] = {[ir_success] = "32",
+                                          [ir_log] = "39",
+                                          [ir_warning] = "33",
+                                          [ir_error] = "31",
+                                          [ir_panic] = "4;1;31"};
+
+/**
  * @name CloseStreams
  * @authors Israfil Argos
- * @brief Close all of the open output streams. This removes the need to
- * fclose any provided stream.
+ * @brief Close all of the open output streams. This removes the need
+ * to fclose any provided stream.
  * @since 0.0.2
  */
 [[gnu::destructor]]
@@ -80,37 +102,23 @@ static void CloseStreams()
     if (error_output != nullptr) (void)fclose(error_output);
 }
 
-static inline ir_output_t *GetProperOutput(ir_severity_t severity)
+/**
+ * @name GetOutput
+ * @authors Israfil Argos
+ * @brief Get the correct output for the passed in severity level.
+ * @since 0.0.1
+ *
+ * @param severity The severity level whose output to get.
+ * @returns The output requested.
+ */
+[[gnu::returns_nonnull]] [[nodiscard("Expression result unused.")]]
+static ir_output_t *GetOutput(ir_severity_t severity)
 {
     if ((severity == ir_warning || severity == ir_error ||
          severity == ir_panic) &&
         error_output != nullptr)
         return error_output;
     return log_output;
-}
-
-static inline const char *GetSeverityString(ir_severity_t severity)
-{
-    switch (severity)
-    {
-        case ir_success: return "success";
-        case ir_log:     return "log";
-        case ir_warning: return "warning";
-        case ir_error:   return "error";
-        default:         return "!! panic !!";
-    }
-}
-
-static inline const char *GetProperColor(ir_severity_t severity)
-{
-    switch (severity)
-    {
-        case ir_success: return "32";
-        case ir_log:     return "39"; // Default color.
-        case ir_warning: return "33";
-        case ir_error:   return "31";
-        default:         return "4;1;31"; // Underline, bold, red.
-    }
 }
 
 void Ir_SilenceLogs(bool silence) { logs_silenced = silence; }
@@ -149,10 +157,6 @@ bool Ir_SetErrorOutputS(const char *path)
     return true;
 }
 
-const ir_output_t *Ir_GetLogOutput(void) { return log_output; }
-
-const ir_output_t *Ir_GetErrorOutput(void) { return error_output; }
-
 void Ir_SilenceStacktrace(bool silence) { stacktrace_silenced = silence; }
 
 void Ir_SetStacktraceDepth(uint8_t depth) { stacktrace_depth = depth; }
@@ -166,6 +170,8 @@ char **Ir_GetStacktrace(void)
     (void)backtrace(buffer, stacktrace_depth + 1);
 
     char **symbols = backtrace_symbols(buffer, stacktrace_depth + 1);
+    // Failed allocation. Aw man :(
+    if (symbols == nullptr) return nullptr;
     symbols[stacktrace_depth] = nullptr;
     return symbols;
 }
@@ -232,21 +238,18 @@ void Ir_Log_(ir_loggable_t *object, const char *file, const char *function,
     if (logs_silenced && object->severity != ir_error &&
         object->severity != ir_panic)
         return;
+
     if (log_output == nullptr) log_output = stdout;
+    ir_output_t *output = GetOutput(object->severity);
 
-    ir_output_t *output = GetProperOutput(object->severity);
-
-    const char *color_code = nullptr;
+    const char *color_code = severity_colors[object->severity];
     if (output == stdout || ansi_allowed)
-    {
-        color_code = GetProperColor(object->severity);
         (void)fprintf(output, "\033[%sm", color_code);
-    }
 
-    (void)fprintf(
-        output, "\n%s, ln. %u :: %s():\n%s | %s - %s\n\tContext: %s\n",
-        file, line, function, GetSeverityString(object->severity),
-        object->title, object->description, object->context);
+    (void)fprintf(output,
+                  "\n%s, ln. %u :: %s():\n%s | %s - %s\n\tContext: %s\n",
+                  file, line, function, severity_strings[object->severity],
+                  object->title, object->description, object->context);
     if (output == stdout || ansi_allowed) (void)fputs("\033[0m", output);
 
     // Handle panics properly.
