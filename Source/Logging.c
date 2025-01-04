@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <Errors.h>
 #include <Logging.h>
 #include <Memory.h>
 
@@ -81,11 +82,11 @@ static const char *const severity_strings[] = {[ir_success] = "success",
  * @brief The ANSI color codes for each possible log severity.
  * @since 0.0.2
  */
-static const char* const severity_colors[] = {[ir_success] = "32",
-                                          [ir_log] = "39",
-                                          [ir_warning] = "33",
-                                          [ir_error] = "31",
-                                          [ir_panic] = "4;1;31"};
+static const char *const severity_colors[] = {[ir_success] = "32",
+                                              [ir_log] = "39",
+                                              [ir_warning] = "33",
+                                              [ir_error] = "31",
+                                              [ir_panic] = "4;1;31"};
 
 /**
  * @name CloseStreams
@@ -98,7 +99,8 @@ static const char* const severity_colors[] = {[ir_success] = "32",
 static void CloseStreams()
 {
     // We do not care if these closes fail.
-    if (log_output != stdout) (void)fclose(log_output);
+    if (log_output != stdout && log_output != nullptr)
+        (void)fclose(log_output);
     if (error_output != nullptr) (void)fclose(error_output);
 }
 

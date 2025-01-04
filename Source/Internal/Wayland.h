@@ -1,14 +1,3 @@
-/**
- * @file Wayland.h
- * @authors Israfil Argos (israfiel-a)
- * @brief This file provides Iridium's internal Wayland client
- * implementation. All convoluted Wayland-ness has been confined into
- * simple functions.
- *
- * Copyright (c) 2024 the Iridium Development Team
- * This file is under the AGPLv3. For more information on what that
- * entails, see the LICENSE file provided with the engine.
- */
 #ifndef IRIDIUM_INTERNAL_WAYLAND_H
 #define IRIDIUM_INTERNAL_WAYLAND_H
 

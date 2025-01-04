@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.31.3 FATAL_ERROR)
-project("Iridium" LANGUAGES C VERSION 0.0.2 DESCRIPTION "A 3D game engine written in C23.")
+project("Iridium" LANGUAGES C VERSION 0.0.3 DESCRIPTION "A 3D game engine written in C23.")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/Modules")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Iridium/Demos)
@@ -43,12 +43,10 @@ set(IRIDIUM_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Include")
 set(IRIDIUM_DEMO_DIR "${CMAKE_SOURCE_DIR}/Demos")
 include_directories("${IRIDIUM_INCLUDE_DIR}")
 
-set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Iridium.h"
-    "${IRIDIUM_INCLUDE_DIR}/Logging.h" "${IRIDIUM_INCLUDE_DIR}/Errors.h"
-    "${IRIDIUM_INCLUDE_DIR}/Memory.h")
-set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Iridium.c" 
-    "${IRIDIUM_SOURCE_DIR}/Logging.c" "${IRIDIUM_SOURCE_DIR}/Errors.c"
-    "${IRIDIUM_SOURCE_DIR}/Memory.c")
+set(IRIDIUM_HEADER_FILES "${IRIDIUM_INCLUDE_DIR}/Logging.h" 
+    "${IRIDIUM_INCLUDE_DIR}/Errors.h" "${IRIDIUM_INCLUDE_DIR}/Memory.h")
+set(IRIDIUM_SOURCE_FILES "${IRIDIUM_SOURCE_DIR}/Logging.c" 
+    "${IRIDIUM_SOURCE_DIR}/Errors.c" "${IRIDIUM_SOURCE_DIR}/Memory.c")
 if(LINUX)
     set(IRIDIUM_SOURCE_FILES ${IRIDIUM_SOURCE_FILES} 
         "${IRIDIUM_SOURCE_DIR}/Internal/Wayland.c" 
